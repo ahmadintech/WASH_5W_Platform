@@ -5,7 +5,7 @@ import { useAuth } from "../../context/AuthContext";
 import { UserRole } from "../../types/wash";
 
 export default function SignInForm() {
-  const { login, loginAsRole, loginAsCoordinatorState } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   const [email, setEmail] = useState("admin@washsector-ne.org");
@@ -14,31 +14,7 @@ export default function SignInForm() {
   const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [loggingRole, setLoggingRole] = useState<string | null>(null);
-  const [loggingCoordinatorState, setLoggingCoordinatorState] = useState<string | null>(null);
-  const [selectedRole, setSelectedRole] = useState<UserRole>("coordinator");
-
-  const handleQuickLogin = (role: UserRole) => {
-    setLoggingRole(role);
-    setLoggingCoordinatorState(null);
-    setLoading(true);
-    setTimeout(() => {
-      loginAsRole(role);
-      setLoading(false);
-      navigate("/admin/dashboard");
-    }, 250);
-  };
-
-  const handleQuickCoordinatorLogin = (state: "Adamawa" | "Borno" | "Yobe") => {
-    setLoggingCoordinatorState(state);
-    setLoggingRole("coordinator");
-    setLoading(true);
-    setTimeout(() => {
-      loginAsCoordinatorState(state);
-      setLoading(false);
-      navigate("/admin/dashboard");
-    }, 250);
-  };
+  const [selectedRole] = useState<UserRole>("coordinator");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,213 +31,138 @@ export default function SignInForm() {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto bg-white dark:bg-gray-900 rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-800 p-6 sm:p-8 backdrop-blur-md">
-      {/* Brand Header */}
+    <div className="w-full max-w-md mx-auto flex flex-col items-center">
+      {/* Brand Logo & Header outside the login card */}
       <div className="flex flex-col items-center text-center mb-6">
         <Link
           to="/"
           title="Return to Home"
-          className="p-3 rounded-2xl bg-[#F0F7F7] dark:bg-gray-800/80 border border-[#C9E1DF] dark:border-gray-700 shadow-sm mb-3 hover:scale-105 hover:shadow-md transition-all cursor-pointer block"
+          className="p-3.5 rounded-2xl bg-white/90 dark:bg-gray-800/90 border border-[#C9E1DF] dark:border-gray-700 shadow-md mb-2.5 hover:scale-105 hover:shadow-lg transition-all cursor-pointer block"
         >
           <img
             src="/images/logo/wash-logo.png"
             alt="WASH Sector Nigeria"
-            className="h-14 sm:h-16 w-auto object-contain pointer-events-none"
+            className="h-16 sm:h-20 w-auto object-contain pointer-events-none"
             onError={(e) => {
               (e.target as HTMLImageElement).src = "./images/logo/wash-logo.png";
             }}
           />
         </Link>
-        <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight">
-          Sign In to Your Account
-        </h1>
-        <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1.5 max-w-sm">
-          Enter your email and password to access the WASH 5W coordination platform.
-        </p>
+        <span className="text-xs sm:text-sm font-extrabold uppercase tracking-widest text-brand-900 dark:text-brand-300">
+          WASH Sector Nigeria
+        </span>
       </div>
 
-      {error && (
-        <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs sm:text-sm flex items-center gap-2">
-          <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-            <path
-              fillRule="evenodd"
-              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-              clipRule="evenodd"
-            />
-          </svg>
-          {error}
-        </div>
-      )}
-
-      {/* Manual Login Form */}
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
-            Email Address
-          </label>
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="name@organisation.org"
-            className="w-full h-11 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 text-xs sm:text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition-all shadow-xs"
-          />
-        </div>
-
-        <div>
-          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
-            Password
-          </label>
-          <div className="relative">
-            <input
-              type={showPassword ? "text" : "password"}
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter password"
-              className="w-full h-11 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 pr-11 text-xs sm:text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition-all shadow-xs"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-              aria-label="Toggle password visibility"
-            >
-              {showPassword ? (
-                <EyeIcon className="size-4 fill-current" />
-              ) : (
-                <EyeCloseIcon className="size-4 fill-current" />
-              )}
-            </button>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between text-xs pt-1">
-          <label className="flex items-center gap-2 cursor-pointer text-gray-600 dark:text-gray-400">
-            <input
-              type="checkbox"
-              checked={rememberMe}
-              onChange={(e) => setRememberMe(e.target.checked)}
-              className="w-3.5 h-3.5 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
-            />
-            <span>Remember session</span>
-          </label>
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full h-11 rounded-xl bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 text-white dark:text-gray-900 font-bold text-xs sm:text-sm transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
-        >
-          {loading && !loggingRole && !loggingCoordinatorState ? (
-            <>
-              <svg className="animate-spin h-4 w-4 text-current" viewBox="0 0 24 24" fill="none">
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                ></circle>
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                ></path>
-              </svg>
-              <span>Authenticating...</span>
-            </>
-          ) : (
-            <span>Sign In with Credentials</span>
-          )}
-        </button>
-
-        {/* Quick Demo Access Badges under Sign In with Credentials button with padding top */}
-        <div className="pt-6 mt-6 border-t border-gray-100 dark:border-gray-800 text-center">
-          <p className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">
-            Quick Demo Access
+      {/* Login Card */}
+      <div className="w-full bg-white dark:bg-gray-900 rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-800 p-6 sm:p-8 backdrop-blur-md">
+        <div className="text-center mb-6">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight">
+            Sign In to Your Account
+          </h1>
+          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1.5">
+            Enter your email and password to access the WASH 5W coordination platform.
           </p>
-          <div className="flex flex-wrap items-center justify-center gap-2">
-            {/* Sector Admin */}
-            <button
-              type="button"
-              disabled={loading}
-              onClick={() => handleQuickLogin("admin")}
-              title="Sign in instantly as Sector Administrator (All BAY States)"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all duration-200 border bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100 hover:border-rose-300 hover:shadow-xs active:scale-95 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800/80 dark:hover:bg-rose-900/60 disabled:opacity-50 cursor-pointer"
-            >
-              {loading && loggingRole === "admin" ? (
-                <svg className="animate-spin h-3 w-3 text-rose-600" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                </svg>
-              ) : (
-                <span className="w-2 h-2 rounded-full bg-rose-500"></span>
-              )}
-              <span>Sector Admin</span>
-            </button>
-
-            {/* Coordinator of Adamawa */}
-            <button
-              type="button"
-              disabled={loading}
-              onClick={() => handleQuickCoordinatorLogin("Adamawa")}
-              title="Sign in as Adamawa State WASH Coordinator (Adamawa Data Only)"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all duration-200 border bg-teal-50 text-teal-700 border-teal-200 hover:bg-teal-100 hover:border-teal-300 hover:shadow-xs active:scale-95 dark:bg-teal-950/40 dark:text-teal-300 dark:border-teal-800/80 dark:hover:bg-teal-900/60 disabled:opacity-50 cursor-pointer"
-            >
-              {loading && loggingCoordinatorState === "Adamawa" ? (
-                <svg className="animate-spin h-3 w-3 text-teal-600" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                </svg>
-              ) : (
-                <span className="w-2 h-2 rounded-full bg-teal-500"></span>
-              )}
-              <span>Coordinator of Adamawa</span>
-            </button>
-
-            {/* Coordinator of Borno */}
-            <button
-              type="button"
-              disabled={loading}
-              onClick={() => handleQuickCoordinatorLogin("Borno")}
-              title="Sign in as Borno State WASH Coordinator (Borno Data Only)"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all duration-200 border bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 hover:border-amber-300 hover:shadow-xs active:scale-95 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/80 dark:hover:bg-amber-900/60 disabled:opacity-50 cursor-pointer"
-            >
-              {loading && loggingCoordinatorState === "Borno" ? (
-                <svg className="animate-spin h-3 w-3 text-amber-600" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                </svg>
-              ) : (
-                <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-              )}
-              <span>Coordinator of Borno</span>
-            </button>
-
-            {/* Coordinator of Yobe */}
-            <button
-              type="button"
-              disabled={loading}
-              onClick={() => handleQuickCoordinatorLogin("Yobe")}
-              title="Sign in as Yobe State WASH Coordinator (Yobe Data Only)"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all duration-200 border bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300 hover:shadow-xs active:scale-95 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/80 dark:hover:bg-emerald-900/60 disabled:opacity-50 cursor-pointer"
-            >
-              {loading && loggingCoordinatorState === "Yobe" ? (
-                <svg className="animate-spin h-3 w-3 text-emerald-600" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                </svg>
-              ) : (
-                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-              )}
-              <span>Coordinator of Yobe</span>
-            </button>
-          </div>
         </div>
-      </form>
+
+        {error && (
+          <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs sm:text-sm flex items-center gap-2">
+            <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                fillRule="evenodd"
+                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                clipRule="evenodd"
+              />
+            </svg>
+            {error}
+          </div>
+        )}
+
+        {/* Manual Login Form */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+              Email Address
+            </label>
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="name@organisation.org"
+              className="w-full h-11 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 text-xs sm:text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition-all shadow-xs"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+              Password
+            </label>
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter password"
+                className="w-full h-11 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 pr-11 text-xs sm:text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition-all shadow-xs"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
+                aria-label="Toggle password visibility"
+              >
+                {showPassword ? (
+                  <EyeIcon className="size-4 fill-current" />
+                ) : (
+                  <EyeCloseIcon className="size-4 fill-current" />
+                )}
+              </button>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between text-xs pt-1">
+            <label className="flex items-center gap-2 cursor-pointer text-gray-600 dark:text-gray-400">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="w-3.5 h-3.5 rounded border-gray-300 text-brand-600 focus:ring-brand-500 cursor-pointer"
+              />
+              <span>Remember session</span>
+            </label>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full h-11 rounded-xl bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 text-white dark:text-gray-900 font-bold text-xs sm:text-sm transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+          >
+            {loading ? (
+              <>
+                <svg className="animate-spin h-4 w-4 text-current" viewBox="0 0 24 24" fill="none">
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+                <span>Authenticating...</span>
+              </>
+            ) : (
+              <span>Sign In with Credentials</span>
+            )}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
