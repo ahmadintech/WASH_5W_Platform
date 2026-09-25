@@ -93,7 +93,7 @@ export default function NotificationDropdown({
             Notifications
           </h5>
           <button
-            onClick={closeDropdown}
+            onClick={handleClose}
             className="flex items-center justify-center w-8 h-8 text-gray-400 rounded-full hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-200 transition-colors"
             aria-label="Close notifications"
           >
@@ -122,7 +122,7 @@ export default function NotificationDropdown({
             notifications.map((n) => (
               <li key={n.id}>
                 <DropdownItem
-                  onItemClick={closeDropdown}
+                  onItemClick={handleClose}
                   className="flex gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
                 >
                   <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 font-bold text-xs dark:bg-emerald-950/60 dark:text-emerald-300">
@@ -143,7 +143,7 @@ export default function NotificationDropdown({
           {/* Static WASH notifications */}
           <li>
             <DropdownItem
-              onItemClick={closeDropdown}
+              onItemClick={handleClose}
               className="flex gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
             >
               <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 font-bold text-xs dark:bg-emerald-950/60 dark:text-emerald-300">
@@ -166,7 +166,7 @@ export default function NotificationDropdown({
 
           <li>
             <DropdownItem
-              onItemClick={closeDropdown}
+              onItemClick={handleClose}
               className="flex gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
             >
               <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700 font-bold text-xs dark:bg-amber-950/60 dark:text-amber-300">
@@ -190,7 +190,7 @@ export default function NotificationDropdown({
 
           <li>
             <DropdownItem
-              onItemClick={closeDropdown}
+              onItemClick={handleClose}
               className="flex gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
             >
               <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-indigo-700 font-bold text-xs dark:bg-indigo-950/60 dark:text-indigo-300">
@@ -213,7 +213,7 @@ export default function NotificationDropdown({
 
           <li>
             <DropdownItem
-              onItemClick={closeDropdown}
+              onItemClick={handleClose}
               className="flex gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
             >
               <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-700 font-bold text-xs dark:bg-brand-950/60 dark:text-brand-300">
@@ -236,7 +236,7 @@ export default function NotificationDropdown({
 
           <li>
             <DropdownItem
-              onItemClick={closeDropdown}
+              onItemClick={handleClose}
               className="flex gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
             >
               <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-sky-100 text-sky-700 font-bold text-xs dark:bg-sky-950/60 dark:text-sky-300">
@@ -259,7 +259,7 @@ export default function NotificationDropdown({
 
           <li>
             <DropdownItem
-              onItemClick={closeDropdown}
+              onItemClick={handleClose}
               className="flex gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
             >
               <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-purple-100 text-purple-700 font-bold text-xs dark:bg-purple-950/60 dark:text-purple-300">
@@ -285,7 +285,7 @@ export default function NotificationDropdown({
         <div className="shrink-0 px-4 py-3 border-t border-gray-100 dark:border-gray-700">
           <Link
             to="/"
-            onClick={closeDropdown}
+            onClick={handleClose}
             className="block w-full py-2 text-sm font-medium text-center text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 transition-colors"
           >
             View All Notifications

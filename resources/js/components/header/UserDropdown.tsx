@@ -110,7 +110,7 @@ export default function UserDropdown({
         <div className="py-2 space-y-1 border-b border-gray-100 dark:border-gray-700">
           <Link
             to="/profile"
-            onClick={closeDropdown}
+            onClick={handleClose}
             className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/60 rounded-lg transition-colors"
           >
             <svg className="w-4 h-4 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -122,7 +122,7 @@ export default function UserDropdown({
           {currentUser.role === "admin" && (
             <Link
               to="/admin/settings"
-              onClick={closeDropdown}
+              onClick={handleClose}
               className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/60 rounded-lg transition-colors"
             >
               <svg className="w-4 h-4 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
