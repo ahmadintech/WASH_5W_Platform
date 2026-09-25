@@ -31,30 +31,27 @@ export default function SignInForm() {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto flex flex-col items-center">
-      {/* Brand Logo & Header outside the login card */}
-      <div className="flex flex-col items-center text-center mb-6">
+    <div className="w-full max-w-lg mx-auto flex flex-col items-center">
+      {/* Brand Logo outside the login card */}
+      <div className="flex flex-col items-center text-center mb-5">
         <Link
           to="/"
           title="Return to Home"
-          className="p-3.5 rounded-2xl bg-white/90 dark:bg-gray-800/90 border border-[#C9E1DF] dark:border-gray-700 shadow-md mb-2.5 hover:scale-105 hover:shadow-lg transition-all cursor-pointer block"
+          className="p-2 sm:p-2.5 rounded-2xl bg-white/95 dark:bg-gray-800/95 border border-[#C9E1DF] dark:border-gray-700 shadow-md hover:scale-105 hover:shadow-lg transition-all cursor-pointer block"
         >
           <img
             src="/images/logo/wash-logo.png"
             alt="WASH Sector Nigeria"
-            className="h-16 sm:h-20 w-auto object-contain pointer-events-none"
+            className="h-10 sm:h-12 w-auto object-contain pointer-events-none"
             onError={(e) => {
               (e.target as HTMLImageElement).src = "./images/logo/wash-logo.png";
             }}
           />
         </Link>
-        <span className="text-xs sm:text-sm font-extrabold uppercase tracking-widest text-brand-900 dark:text-brand-300">
-          WASH Sector Nigeria
-        </span>
       </div>
 
       {/* Login Card */}
-      <div className="w-full bg-white dark:bg-gray-900 rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-800 p-6 sm:p-8 backdrop-blur-md">
+      <div className="w-full bg-white dark:bg-gray-900 rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-800 p-8 sm:p-10 md:p-12 backdrop-blur-md">
         <div className="text-center mb-6">
           <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight">
             Sign In to Your Account
