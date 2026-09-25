@@ -51,18 +51,18 @@ export default function SignInForm() {
       </div>
 
       {/* Login Card */}
-      <div className="w-full bg-white dark:bg-gray-900 rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-800 p-8 sm:p-10 md:p-12 backdrop-blur-md">
-        <div className="text-center mb-6">
-          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight">
+      <div className="w-full bg-white dark:bg-gray-900 rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-800 px-8 sm:px-12 py-10 sm:py-14 backdrop-blur-md">
+        <div className="text-center mb-8">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
             Sign In to Your Account
           </h1>
-          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1.5">
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2.5 max-w-sm mx-auto leading-relaxed">
             Enter your email and password to access the WASH 5W coordination platform.
           </p>
         </div>
 
         {error && (
-          <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs sm:text-sm flex items-center gap-2">
+          <div className="mb-6 p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs sm:text-sm flex items-center gap-2">
             <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
               <path
                 fillRule="evenodd"
@@ -75,9 +75,9 @@ export default function SignInForm() {
         )}
 
         {/* Manual Login Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+            <label className="block text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
               Email Address
             </label>
             <input
@@ -86,12 +86,12 @@ export default function SignInForm() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="name@organisation.org"
-              className="w-full h-11 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 text-xs sm:text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition-all shadow-xs"
+              className="w-full h-12 sm:h-13 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition-all shadow-xs"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+            <label className="block text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
               Password
             </label>
             <div className="relative">
@@ -101,30 +101,30 @@ export default function SignInForm() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter password"
-                className="w-full h-11 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 pr-11 text-xs sm:text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition-all shadow-xs"
+                className="w-full h-12 sm:h-13 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 pr-11 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition-all shadow-xs"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
                 aria-label="Toggle password visibility"
               >
                 {showPassword ? (
-                  <EyeIcon className="size-4 fill-current" />
+                  <EyeIcon className="size-5 fill-current" />
                 ) : (
-                  <EyeCloseIcon className="size-4 fill-current" />
+                  <EyeCloseIcon className="size-5 fill-current" />
                 )}
               </button>
             </div>
           </div>
 
-          <div className="flex items-center justify-between text-xs pt-1">
+          <div className="flex items-center justify-between text-xs sm:text-sm pt-1">
             <label className="flex items-center gap-2 cursor-pointer text-gray-600 dark:text-gray-400">
               <input
                 type="checkbox"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
-                className="w-3.5 h-3.5 rounded border-gray-300 text-brand-600 focus:ring-brand-500 cursor-pointer"
+                className="w-4 h-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500 cursor-pointer"
               />
               <span>Remember session</span>
             </label>
@@ -133,11 +133,11 @@ export default function SignInForm() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full h-11 rounded-xl bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 text-white dark:text-gray-900 font-bold text-xs sm:text-sm transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+            className="w-full h-12 sm:h-13 rounded-xl bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 text-white dark:text-gray-900 font-bold text-sm transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer mt-2"
           >
             {loading ? (
               <>
-                <svg className="animate-spin h-4 w-4 text-current" viewBox="0 0 24 24" fill="none">
+                <svg className="animate-spin h-5 w-5 text-current" viewBox="0 0 24 24" fill="none">
                   <circle
                     className="opacity-25"
                     cx="12"
