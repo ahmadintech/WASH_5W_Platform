@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { usePage } from "@inertiajs/react";
 import { UserRole, UserProfile } from "../types/wash";
 
 export interface UserPermissions {
@@ -229,6 +230,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // network or unauthenticated
       });
   }, []);
+
+  // Sync with Inertia page shared auth props
+  try {
+    const pageProps = usePage()?.props as any;
+    useEffect(() => {
+      if (pageProps?.auth?.user) {
+        setCurrentUser(pageProps.auth.user);
+        setIsAuthenticated(true);
+        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(pageProps.auth.user));
+        localStorage.setItem("wash-auth-token", "true");
+      }
+    }, [pageProps?.auth?.user]);
+  } catch {
+    // context used outside inertia
+  }
 
   useEffect(() => {
     try {

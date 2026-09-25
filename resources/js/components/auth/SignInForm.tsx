@@ -14,7 +14,7 @@ export default function SignInForm() {
   const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [selectedRole] = useState<UserRole>("coordinator");
+  const [selectedRole] = useState<UserRole>("admin");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

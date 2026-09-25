@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { usePage } from "@inertiajs/react";
 import PageMeta from "../../components/common/PageMeta";
 import AppLayout from "../../layout/AppLayout";
 import { useAuth } from "../../context/AuthContext";
@@ -9,7 +10,13 @@ import CoverageDashboard from "../Wash/CoverageDashboard";
 
 export default function Home() {
   const { currentUser, isAuthenticated } = useAuth();
-  const role = currentUser?.role || "partner";
+  let serverRole: string | undefined;
+  try {
+    const page = usePage()?.props as any;
+    serverRole = page?.auth?.user?.role;
+  } catch {}
+
+  const role = currentUser?.role || serverRole || "admin";
 
   // Tab switch: Management Console vs 5W Coverage Matrix
   const [activeTab, setActiveTab] = useState<"management" | "coverage">("management");

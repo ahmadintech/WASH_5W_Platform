@@ -36,10 +36,17 @@ class HandleInertiaRequests extends Middleware
 
             'auth' => [
                 'user' => $user ? [
-                    'id' => $user->id,
+                    'id' => 'usr_'.$user->id,
                     'name' => $user->name,
                     'email' => $user->email,
                     'email_verified_at' => $user->email_verified_at,
+                    'role' => $user->hasRole('admin') ? 'admin' : ($user->hasRole('coordinator') ? 'coordinator' : ($user->roles->first()?->name ?? 'partner')),
+                    'roleTitle' => $user->role_title ?? ($user->hasRole('admin') ? 'Sector Administrator' : ($user->hasRole('coordinator') ? 'State Coordinator' : 'Implementing Partner')),
+                    'organization' => $user->organization ?? 'WASH Sector North East Nigeria',
+                    'organizationType' => $user->organization_type ?? 'Government / UN Co-Lead',
+                    'state' => $user->state ?? 'Borno',
+                    'lga' => $user->lga ?? 'Maiduguri',
+                    'avatar' => $user->avatar ?? 'https://api.dicebear.com/9.x/avataaars/svg?seed='.urlencode($user->name),
                     'organisation_id' => $user->organisation_id ?? null,
                 ] : null,
                 'permissions' => $user ? $user->getAllPermissions()->pluck('name') : [],
