@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\ResourceDocument;
+use App\Models\SectorSetting;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 use Tighten\Ziggy\Ziggy;
@@ -54,6 +56,39 @@ class HandleInertiaRequests extends Middleware
                 'error' => fn () => $request->session()->get('error'),
                 'warning' => fn () => $request->session()->get('warning'),
             ],
+
+            'sectorSettings' => fn () => [
+                'reportingConfig' => SectorSetting::get('reporting_config', [
+                    'activeCycle' => '2026-08',
+                    'deadlineDate' => '2026-09-12',
+                    'isFreezeActive' => false,
+                    'notes' => 'Monthly 5W submission window for BAY states humanitarian response.',
+                ]),
+                'systemConfig' => SectorSetting::get('system_config', [
+                    'platformTitle' => 'WASH 5W Activity Reporting Platform',
+                    'leadAgency' => 'UNICEF / Federal Ministry of Water Resources',
+                    'operationalContext' => 'North East Nigeria (BAY States Humanitarian Response)',
+                    'defaultState' => 'Borno',
+                    'requireGps' => true,
+                    'requirePwd' => true,
+                    'autoSaveDrafts' => true,
+                    'draftIntervalSeconds' => 30,
+                    'enableDeadlineReminders' => true,
+                    'reminderDaysBefore' => 3,
+                    'choleraAlertThreshold' => 5,
+                    'replyToEmail' => 'washcluster.nigeria@unicef.org',
+                    'enableHdxSync' => false,
+                    'hdxApiKey' => '',
+                    'enablePublicDashboard' => true,
+                    'dataRetentionDays' => 365,
+                ]),
+                'all' => SectorSetting::allKeyed(),
+            ],
+
+            'resources' => fn () => ResourceDocument::where('is_published', true)
+                ->orderBy('sort_order', 'asc')
+                ->latest()
+                ->get(),
         ];
     }
 }

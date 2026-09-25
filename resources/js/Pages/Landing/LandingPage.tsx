@@ -288,7 +288,7 @@ function StatCard({
 /* ─── Main Landing Page Component ────────────────────────────────── */
 export default function LandingPage() {
   const navigate = useNavigate();
-  const { stats, reportingConfig } = useWashData();
+  const { stats, reportingConfig, resources } = useWashData();
   const { isAuthenticated } = useAuth();
 
   const statsRef = useRef<HTMLDivElement>(null);
@@ -873,80 +873,19 @@ export default function LandingPage() {
             </p>
           </div>
 
-          {/* Downloadable Materials Grid (NGO Standard) */}
+          {/* Downloadable Materials Grid (Loaded dynamically from DB) */}
           <div style={{
             display: "grid",
             gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 340px), 1fr))",
             gap: 20,
           }}>
-            {[
-              {
-                id: "sphere-standards",
-                title: "SPHERE Standards: WASH in Humanitarian Response",
-                category: "Global Cluster Benchmark",
-                format: "PDF",
-                size: "4.2 MB",
-                badgeColor: "#12707E",
-                desc: "Universal minimum standards for emergency water supply (15L/p/d), sanitation ratios (20 persons/latrine), and handwashing distances.",
-                highlights: ["15L Water / Person / Day", "20 Persons Per Latrine", "FRC 0.5 mg/L Standard"],
-                fileName: "SPHERE_Humanitarian_WASH_Standards_2026.pdf",
-              },
-              {
-                id: "chlorination-guidelines",
-                title: "Emergency Water Chlorination & FRC Guidelines",
-                category: "Water Quality TWG",
-                format: "PDF",
-                size: "2.8 MB",
-                badgeColor: "#2E7D47",
-                desc: "Standard operating procedures for batch chlorination, inline doser calibration, pool tester monitoring, and Free Residual Chlorine.",
-                highlights: ["FRC Pool Tester SOP", "Shock Chlorination Protocol", "Borehole Inline Dosing"],
-                fileName: "WASH_Cluster_Chlorination_Guidelines_NE_Nigeria.pdf",
-              },
-              {
-                id: "sludge-management",
-                title: "Faecal Sludge Management & Camp Desludging Protocols",
-                category: "Sanitation Working Group",
-                format: "PDF",
-                size: "3.5 MB",
-                badgeColor: "#C1722F",
-                desc: "Safe desludging procedures for IDP camps, containment pit designs, lime neutralization, and biological waste handling.",
-                highlights: ["Camp Desludging SOP", "Lime Neutralization Pit", "Sanitation Worker PPE"],
-                fileName: "Faecal_Sludge_Management_Camp_Protocol_2026.pdf",
-              },
-              {
-                id: "reporting-guidance",
-                title: "5W Technical Manual & Indicator Reporting Dictionary",
-                category: "Information Management",
-                format: "XLSX / PDF",
-                size: "1.9 MB",
-                badgeColor: "#6D28D9",
-                desc: "Complete reporting dictionary defining all standard 5W activities, disaggregation rules (M/F/Girls/Boys/PWD), and GPS standards.",
-                highlights: ["Full Indicator Glossary", "GPS Coordinate Rules", "Monthly Data Checklist"],
-                fileName: "5W_Reporting_Manual_Indicator_Dictionary_v2026.xlsx",
-              },
-              {
-                id: "cholera-cati-sop",
-                title: "Case-Area Targeted Intervention (CATI) Cholera SOP",
-                category: "Outbreak Taskforce",
-                format: "PDF",
-                size: "2.1 MB",
-                badgeColor: "#B91C1C",
-                desc: "Operational guidelines for 48-hour rapid response cordoning around suspected cholera index cases, disinfection, and soap distribution.",
-                highlights: ["48hr Rapid Response Trigger", "Household Disinfection Kits", "Ring Hygiene Promotion"],
-                fileName: "CATI_Cholera_Response_Mechanism_NE_Nigeria.pdf",
-              },
-              {
-                id: "solar-borehole-manual",
-                title: "Solarized Motorized Borehole Design & QA Standards",
-                category: "Infrastructure & RUWASSA",
-                format: "PDF",
-                size: "5.4 MB",
-                badgeColor: "#0B3C46",
-                desc: "Technical engineering specifications for submersible solar pumping systems, hybrid inverters, and aquifer yield testing in the Chad Basin.",
-                highlights: ["Solar PV Sizing Tables", "Hybrid Inverter QA", "Aquifer Testing Rules"],
-                fileName: "Solar_Borehole_Infrastructure_Manual_RUWASSA.pdf",
-              },
-            ].map(item => (
+            {((resources && resources.length > 0 ? resources : []).filter(r => r.is_published !== false && r.isPublished !== false)).map(item => {
+              const badgeColor = item.badge_color || item.badgeColor || "#12707E";
+              const desc = item.description || (item as any).desc || "";
+              const fileName = item.file_name || item.fileName || "document.pdf";
+              const highlightsList = Array.isArray(item.highlights) ? item.highlights : [];
+
+              return (
               <div
                 key={item.id}
                 style={{
@@ -976,7 +915,7 @@ export default function LandingPage() {
                     fontSize: 11.5,
                     fontFamily: FONT_MONO,
                     fontWeight: 700,
-                    color: item.badgeColor,
+                    color: badgeColor,
                     letterSpacing: "0.02em",
                   }}>
                     {item.category}
@@ -1015,45 +954,50 @@ export default function LandingPage() {
                   flex: 1,
                   fontFamily: FONT_PRIMARY,
                 }}>
-                  {item.desc}
+                  {desc}
                 </p>
 
                 {/* Highlights */}
-                <div style={{
-                  background: "#F8FAFC",
-                  border: "1px solid #EEF2F6",
-                  borderRadius: 6,
-                  padding: "8px 10px",
-                  marginBottom: 16,
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: 6,
-                }}>
-                  {item.highlights.map(hl => (
-                    <span key={hl} style={{
-                      fontSize: 11.5,
-                      color: "#334155",
-                      fontWeight: 500,
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 4,
-                    }}>
-                      <i className="fa-solid fa-check" style={{ color: item.badgeColor, fontSize: 10 }}></i>
-                      {hl}
-                    </span>
-                  ))}
-                </div>
+                {highlightsList.length > 0 && (
+                  <div style={{
+                    background: "#F8FAFC",
+                    border: "1px solid #EEF2F6",
+                    borderRadius: 6,
+                    padding: "8px 10px",
+                    marginBottom: 16,
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: 6,
+                  }}>
+                    {highlightsList.map((hl, i) => (
+                      <span key={i} style={{
+                        fontSize: 11.5,
+                        color: "#334155",
+                        fontWeight: 500,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 4,
+                      }}>
+                        <i className="fa-solid fa-check" style={{ color: badgeColor, fontSize: 10 }}></i>
+                        {hl}
+                      </span>
+                    ))}
+                  </div>
+                )}
 
                 {/* Download CTA */}
                 <a
                   href={`#download-${item.id}`}
                   onClick={(e) => {
                     e.preventDefault();
+                    if (typeof fetch !== "undefined") {
+                      fetch(`/api/resources/${item.id}/download`).catch(() => {});
+                    }
                     const blob = new Blob([`WASH Sector North East Nigeria - Technical Document: ${item.title}\nCategory: ${item.category}\nFormat: ${item.format}\nEdition: 2026 Cycle\nContact: im@washsector-ne.org / coordinator@washsector-ne.org`], { type: "text/plain" });
                     const url = URL.createObjectURL(blob);
                     const link = document.createElement("a");
                     link.href = url;
-                    link.download = item.fileName;
+                    link.download = fileName;
                     document.body.appendChild(link);
                     link.click();
                     document.body.removeChild(link);
@@ -1091,7 +1035,8 @@ export default function LandingPage() {
                   Download ({item.size})
                 </a>
               </div>
-            ))}
+            );
+            })}
           </div>
 
         </div>

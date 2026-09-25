@@ -1,10 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import AppLayout from "../../layout/AppLayout";
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import PageMeta from "../../components/common/PageMeta";
-import { useWashData } from "../../context/WashDataContext";
+import { useWashData, TechnicalResource } from "../../context/WashDataContext";
 
-type SettingsTab = "programs" | "cycles" | "system" | "alerts" | "integrations" | "locations";
+type SettingsTab = "programs" | "cycles" | "resources" | "system" | "alerts" | "integrations" | "locations";
 
 export default function SectorSettings() {
   const {
@@ -38,6 +38,10 @@ export default function SectorSettings() {
     getWardsForLga,
     addWard,
     removeWard,
+    resources,
+    addResource,
+    updateResource,
+    deleteResource,
   } = useWashData();
 
   const [activeTab, setActiveTab] = useState<SettingsTab>("programs");
@@ -66,6 +70,14 @@ export default function SectorSettings() {
   const [freezeToggle, setFreezeToggle] = useState(reportingConfig.isFreezeActive);
   const [cycleNotes, setCycleNotes] = useState(reportingConfig.notes || "");
 
+  // Sync with context if updated from backend
+  useEffect(() => {
+    setCycleMonth(reportingConfig.activeCycle);
+    setCycleDeadline(reportingConfig.deadlineDate);
+    setFreezeToggle(reportingConfig.isFreezeActive);
+    setCycleNotes(reportingConfig.notes || "");
+  }, [reportingConfig]);
+
   // System config inputs
   const [platformTitle, setPlatformTitle] = useState(systemConfig.platformTitle);
   const [leadAgency, setLeadAgency] = useState(systemConfig.leadAgency);
@@ -75,6 +87,17 @@ export default function SectorSettings() {
   const [requirePwd, setRequirePwd] = useState(systemConfig.requirePwd);
   const [autoSaveDrafts, setAutoSaveDrafts] = useState(systemConfig.autoSaveDrafts);
   const [draftIntervalSeconds, setDraftIntervalSeconds] = useState(systemConfig.draftIntervalSeconds);
+
+  useEffect(() => {
+    setPlatformTitle(systemConfig.platformTitle);
+    setLeadAgency(systemConfig.leadAgency);
+    setOperationalContext(systemConfig.operationalContext);
+    setDefaultState(systemConfig.defaultState);
+    setRequireGps(systemConfig.requireGps);
+    setRequirePwd(systemConfig.requirePwd);
+    setAutoSaveDrafts(systemConfig.autoSaveDrafts);
+    setDraftIntervalSeconds(systemConfig.draftIntervalSeconds);
+  }, [systemConfig]);
 
   // Alerts config inputs
   const [enableDeadlineReminders, setEnableDeadlineReminders] = useState(systemConfig.enableDeadlineReminders);
@@ -87,6 +110,20 @@ export default function SectorSettings() {
   const [hdxApiKey, setHdxApiKey] = useState(systemConfig.hdxApiKey);
   const [enablePublicDashboard, setEnablePublicDashboard] = useState(systemConfig.enablePublicDashboard);
   const [dataRetentionDays, setDataRetentionDays] = useState(systemConfig.dataRetentionDays);
+
+  // Resource Centre Management State
+  const [showResourceModal, setShowResourceModal] = useState(false);
+  const [editingResource, setEditingResource] = useState<TechnicalResource | null>(null);
+  const [resTitle, setResTitle] = useState("");
+  const [resCategory, setResCategory] = useState("Global Cluster Benchmark");
+  const [resFormat, setResFormat] = useState("PDF");
+  const [resSize, setResSize] = useState("2.5 MB");
+  const [resBadgeColor, setResBadgeColor] = useState("#12707E");
+  const [resDesc, setResDesc] = useState("");
+  const [resHighlights, setResHighlights] = useState("");
+  const [resFileName, setResFileName] = useState("");
+  const [resFileUrl, setResFileUrl] = useState("");
+  const [resIsPublished, setResIsPublished] = useState(true);
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -195,7 +232,7 @@ export default function SectorSettings() {
       isFreezeActive: freezeToggle,
       notes: cycleNotes,
     });
-    showToast("Reporting cycle and deadline parameters saved.");
+    showToast("Reporting cycle and deadline parameters saved to database.");
   };
 
   // Handler for System Config
@@ -211,7 +248,7 @@ export default function SectorSettings() {
       autoSaveDrafts,
       draftIntervalSeconds,
     });
-    showToast("General system configuration updated successfully.");
+    showToast("General system configuration updated in database.");
   };
 
   // Handler for Alerts Config
@@ -236,6 +273,90 @@ export default function SectorSettings() {
       dataRetentionDays,
     });
     showToast("Integration and data exchange settings saved.");
+  };
+
+  // Resource modal helpers
+  const openNewResourceModal = () => {
+    setEditingResource(null);
+    setResTitle("");
+    setResCategory("Global Cluster Benchmark");
+    setResFormat("PDF");
+    setResSize("2.5 MB");
+    setResBadgeColor("#12707E");
+    setResDesc("");
+    setResHighlights("");
+    setResFileName("");
+    setResFileUrl("");
+    setResIsPublished(true);
+    setShowResourceModal(true);
+  };
+
+  const openEditResourceModal = (item: TechnicalResource) => {
+    setEditingResource(item);
+    setResTitle(item.title);
+    setResCategory(item.category);
+    setResFormat(item.format);
+    setResSize(item.size);
+    setResBadgeColor(item.badge_color || item.badgeColor || "#12707E");
+    setResDesc(item.description);
+    setResHighlights(Array.isArray(item.highlights) ? item.highlights.join(", ") : "");
+    setResFileName(item.file_name || item.fileName || "");
+    setResFileUrl(item.file_url || item.fileUrl || "");
+    setResIsPublished(item.is_published ?? item.isPublished ?? true);
+    setShowResourceModal(true);
+  };
+
+  const handleSaveResource = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resTitle.trim() || !resFileName.trim()) {
+      alert("Please provide at least a title and file name.");
+      return;
+    }
+
+    const highlightsArr = resHighlights
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    const payload: Partial<TechnicalResource> = {
+      title: resTitle.trim(),
+      category: resCategory.trim(),
+      format: resFormat.trim(),
+      size: resSize.trim(),
+      badge_color: resBadgeColor,
+      badgeColor: resBadgeColor,
+      description: resDesc.trim(),
+      highlights: highlightsArr,
+      file_name: resFileName.trim(),
+      fileName: resFileName.trim(),
+      file_url: resFileUrl.trim() || `/documents/${resFileName.trim()}`,
+      fileUrl: resFileUrl.trim() || `/documents/${resFileName.trim()}`,
+      is_published: resIsPublished,
+      isPublished: resIsPublished,
+    };
+
+    if (editingResource) {
+      await updateResource(editingResource.id, payload);
+      showToast(`Technical document "${resTitle}" updated.`);
+    } else {
+      await addResource(payload);
+      showToast(`New document "${resTitle}" published to Resource Centre.`);
+    }
+
+    setShowResourceModal(false);
+  };
+
+  const handleDeleteResource = async (item: TechnicalResource) => {
+    if (confirm(`Are you sure you want to delete "${item.title}" from Technical Guidance?`)) {
+      await deleteResource(item.id);
+      showToast(`Document "${item.title}" removed.`);
+    }
+  };
+
+  const handleTogglePublishResource = async (item: TechnicalResource) => {
+    const currentPub = item.is_published ?? item.isPublished ?? true;
+    await updateResource(item.id, { is_published: !currentPub, isPublished: !currentPub });
+    showToast(`Document "${item.title}" ${!currentPub ? "published" : "hidden"}.`);
   };
 
   const handleFactoryReset = () => {
@@ -266,7 +387,7 @@ export default function SectorSettings() {
     <>
       <PageMeta
         title="Settings & System Configurations | WASH Sector NE Nigeria"
-        description="Configure standard 5W programs, activities, units, reporting deadlines, automated alerts, and platform integrations."
+        description="Configure standard 5W programs, activities, units, reporting deadlines, resource centre documents, automated alerts, and platform integrations."
       />
       <PageBreadcrumb pageTitle="Settings & Configurations" />
 
@@ -300,6 +421,17 @@ export default function SectorSettings() {
           }`}
         >
           Reporting Cycles & Deadlines
+        </button>
+
+        <button
+          onClick={() => setActiveTab("resources")}
+          className={`px-4 py-2.5 rounded-xl font-bold transition-all whitespace-nowrap cursor-pointer ${
+            activeTab === "resources"
+              ? "bg-brand-600 text-white shadow-sm"
+              : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+          }`}
+        >
+          Resource Centre & Guidance
         </button>
 
         <button
@@ -343,32 +475,92 @@ export default function SectorSettings() {
               : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
           }`}
         >
-          Locations (States, LGAs & Wards)
+          Location Hierarchy (BAY States)
         </button>
       </div>
 
       {/* TAB 1: PROGRAMS & 5W PARAMETERS */}
       {activeTab === "programs" && (
         <div className="space-y-6">
-          {/* Sub-sector activities */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900 shadow-xs">
-              <h3 className="text-base font-bold text-gray-900 dark:text-white mb-1">
-                Standard WASH Interventions by Sub-Sector
-              </h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-                These options dynamically populate Section 02 (WHAT) of the 5W reporting form for implementing partners.
-              </p>
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900 shadow-xs">
+            <h3 className="text-base font-bold text-gray-900 dark:text-white mb-1">
+              5W Response Sectors & Indicator Trees
+            </h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-6">
+              Add or remove standard humanitarian WASH activities under primary sector pillars.
+            </p>
 
-              <div className="space-y-5">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Add category / activity forms */}
+              <div className="space-y-4">
+                <form onSubmit={handleAddCategory} className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800">
+                  <h4 className="text-xs font-bold text-gray-900 dark:text-white mb-2 uppercase tracking-wider">
+                    Add Program Category
+                  </h4>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newCategoryName}
+                      onChange={(e) => setNewCategoryName(e.target.value)}
+                      placeholder="e.g. Flood Early Warning"
+                      className="flex-1 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 p-2 text-xs text-gray-900 dark:text-white"
+                    />
+                    <button
+                      type="submit"
+                      className="px-3 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-xs font-semibold cursor-pointer"
+                    >
+                      Add
+                    </button>
+                  </div>
+                </form>
+
+                <form onSubmit={handleAddActivity} className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800">
+                  <h4 className="text-xs font-bold text-gray-900 dark:text-white mb-2 uppercase tracking-wider">
+                    Add Activity to Category
+                  </h4>
+                  <div className="space-y-2">
+                    <select
+                      value={selectedCatForNewAct}
+                      onChange={(e) => setSelectedCatForNewAct(e.target.value)}
+                      className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 p-2 text-xs text-gray-900 dark:text-white"
+                    >
+                      {activityCategories.map((c) => (
+                        <option key={c.category} value={c.category}>
+                          {c.category}
+                        </option>
+                      ))}
+                    </select>
+
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={newActivityName}
+                        onChange={(e) => setNewActivityName(e.target.value)}
+                        placeholder="e.g. Solar Borehole Yield Testing"
+                        className="flex-1 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 p-2 text-xs text-gray-900 dark:text-white"
+                      />
+                      <button
+                        type="submit"
+                        className="px-3 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-xs font-semibold cursor-pointer"
+                      >
+                        Add
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+
+              {/* Live list of activity categories */}
+              <div className="lg:col-span-2 space-y-4 max-h-[500px] overflow-y-auto pr-2">
                 {activityCategories.map((cat) => (
-                  <div
-                    key={cat.category}
-                    className="rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/40 p-4"
-                  >
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-xs font-black uppercase tracking-wider text-brand-700 dark:text-brand-300">
-                        {cat.category} ({cat.activities.length} Interventions)
+                  <div key={cat.category} className="rounded-xl border border-gray-200 dark:border-gray-800 p-4 bg-white dark:bg-gray-900">
+                    <div className="flex items-center justify-between mb-3 border-b border-gray-100 dark:border-gray-800 pb-2">
+                      <span className="font-bold text-sm text-gray-900 dark:text-white flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-brand-500"></span>
+                        {cat.category}
+                      </span>
+                      <span className="text-[11px] font-mono text-gray-400">
+                        {cat.activities.length} activities
                       </span>
                     </div>
 
@@ -376,14 +568,13 @@ export default function SectorSettings() {
                       {cat.activities.map((act) => (
                         <span
                           key={act}
-                          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200 shadow-2xs"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs font-medium group"
                         >
-                          <span>{act}</span>
+                          {act}
                           <button
-                            type="button"
                             onClick={() => removeActivity(cat.category, act)}
-                            className="text-gray-400 hover:text-red-500 font-bold ml-1"
-                            title="Remove intervention"
+                            className="text-gray-400 hover:text-rose-500 font-bold ml-1 cursor-pointer"
+                            title="Remove activity"
                           >
                             ×
                           </button>
@@ -394,227 +585,82 @@ export default function SectorSettings() {
                 ))}
               </div>
             </div>
-
-            {/* Quick Add Form */}
-            <div className="space-y-6">
-              <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900 shadow-xs">
-                <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-1">
-                  Add Activity to Sub-Sector
-                </h4>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-                  Append a new standard intervention to an existing cluster category.
-                </p>
-
-                <form onSubmit={handleAddActivity} className="space-y-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                      Sub-Sector Category
-                    </label>
-                    <select
-                      value={selectedCatForNewAct}
-                      onChange={(e) => setSelectedCatForNewAct(e.target.value)}
-                      className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-2.5 text-xs text-gray-900 dark:text-white"
-                    >
-                      {activityCategories.map((c) => (
-                        <option key={c.category} value={c.category}>
-                          {c.category}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                      New Activity Description
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={newActivityName}
-                      onChange={(e) => setNewActivityName(e.target.value)}
-                      placeholder="e.g. Solar Mini-Grid Water Kiosk"
-                      className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-2.5 text-xs text-gray-900 dark:text-white"
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="w-full py-2 px-3 rounded-xl text-xs font-bold bg-brand-600 hover:bg-brand-700 text-white transition-all shadow-xs cursor-pointer"
-                  >
-                    + Add Activity
-                  </button>
-                </form>
-              </div>
-
-              {/* Add New Category */}
-              <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900 shadow-xs">
-                <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-1">
-                  Create New Sub-Sector Category
-                </h4>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-                  Add a new thematic cluster area (e.g. Solar Electrification, Cholera Wash-in-Health).
-                </p>
-
-                <form onSubmit={handleAddCategory} className="space-y-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                      Category Name
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={newCategoryName}
-                      onChange={(e) => setNewCategoryName(e.target.value)}
-                      placeholder="e.g. Flood Rapid Response"
-                      className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-2.5 text-xs text-gray-900 dark:text-white"
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="w-full py-2 px-3 rounded-xl text-xs font-bold bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 text-white dark:text-gray-900 transition-all shadow-xs cursor-pointer"
-                  >
-                    + Create Category
-                  </button>
-                </form>
-              </div>
-            </div>
           </div>
 
-          {/* Units and Locations grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Units, Location Types & Population Groups */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Units */}
             <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900 shadow-xs">
-              <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-1">
-                Units of Measurement ({units.length})
-              </h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-                Valid metric units selectable in Section 02.
-              </p>
-
-              <form onSubmit={handleAddUnit} className="flex gap-2 mb-4">
+              <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-2">Standard Units</h4>
+              <form onSubmit={handleAddUnit} className="flex gap-2 mb-3">
                 <input
                   type="text"
-                  required
                   value={newUnitName}
                   onChange={(e) => setNewUnitName(e.target.value)}
-                  placeholder="e.g. Handwashing Stations"
-                  className="flex-1 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-2 text-xs text-gray-900 dark:text-white"
+                  placeholder="New unit..."
+                  className="flex-1 rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-2 text-xs text-gray-900 dark:text-white"
                 />
-                <button
-                  type="submit"
-                  className="px-3 py-2 rounded-xl text-xs font-bold bg-brand-600 text-white shrink-0 hover:bg-brand-700 cursor-pointer"
-                >
-                  Add Unit
+                <button type="submit" className="px-3 py-1.5 bg-brand-600 text-white rounded-lg text-xs font-semibold cursor-pointer">
+                  +
                 </button>
               </form>
-
-              <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto p-1">
+              <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto">
                 {units.map((u) => (
-                  <span
-                    key={u}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300"
-                  >
-                    <span>{u}</span>
-                    <button
-                      type="button"
-                      onClick={() => removeUnit(u)}
-                      className="text-gray-400 hover:text-red-500 font-bold ml-1"
-                    >
-                      ×
-                    </button>
+                  <span key={u} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-xs text-gray-700 dark:text-gray-300">
+                    {u}
+                    <button onClick={() => removeUnit(u)} className="text-gray-400 hover:text-rose-500 ml-1 cursor-pointer">×</button>
                   </span>
                 ))}
               </div>
             </div>
 
-            {/* Locations & Groups */}
+            {/* Location Types */}
             <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900 shadow-xs">
-              <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-1">
-                Location Types & Target Demographics
-              </h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-                Valid settlements and beneficiary population categories.
-              </p>
+              <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-2">Location Types</h4>
+              <form onSubmit={handleAddLocType} className="flex gap-2 mb-3">
+                <input
+                  type="text"
+                  value={newLocType}
+                  onChange={(e) => setNewLocType(e.target.value)}
+                  placeholder="New location type..."
+                  className="flex-1 rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-2 text-xs text-gray-900 dark:text-white"
+                />
+                <button type="submit" className="px-3 py-1.5 bg-brand-600 text-white rounded-lg text-xs font-semibold cursor-pointer">
+                  +
+                </button>
+              </form>
+              <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto">
+                {locationTypes.map((l) => (
+                  <span key={l} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-xs text-gray-700 dark:text-gray-300">
+                    {l}
+                    <button onClick={() => removeLocationType(l)} className="text-gray-400 hover:text-rose-500 ml-1 cursor-pointer">×</button>
+                  </span>
+                ))}
+              </div>
+            </div>
 
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
-                    Location Types
-                  </label>
-                  <form onSubmit={handleAddLocType} className="flex gap-2 mb-2">
-                    <input
-                      type="text"
-                      required
-                      value={newLocType}
-                      onChange={(e) => setNewLocType(e.target.value)}
-                      placeholder="e.g. Transit center / border point"
-                      className="flex-1 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-2 text-xs text-gray-900 dark:text-white"
-                    />
-                    <button
-                      type="submit"
-                      className="px-3 py-2 rounded-xl text-xs font-bold bg-brand-600 text-white shrink-0 hover:bg-brand-700 cursor-pointer"
-                    >
-                      Add
-                    </button>
-                  </form>
-                  <div className="flex flex-wrap gap-1.5">
-                    {locationTypes.map((lt) => (
-                      <span
-                        key={lt}
-                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300"
-                      >
-                        <span>{lt}</span>
-                        <button
-                          type="button"
-                          onClick={() => removeLocationType(lt)}
-                          className="text-gray-400 hover:text-red-500 ml-1"
-                        >
-                          ×
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
-                    Population Groups
-                  </label>
-                  <form onSubmit={handleAddPopGroup} className="flex gap-2 mb-2">
-                    <input
-                      type="text"
-                      required
-                      value={newPopGroup}
-                      onChange={(e) => setNewPopGroup(e.target.value)}
-                      placeholder="e.g. Cross-border asylum seekers"
-                      className="flex-1 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-2 text-xs text-gray-900 dark:text-white"
-                    />
-                    <button
-                      type="submit"
-                      className="px-3 py-2 rounded-xl text-xs font-bold bg-brand-600 text-white shrink-0 hover:bg-brand-700 cursor-pointer"
-                    >
-                      Add
-                    </button>
-                  </form>
-                  <div className="flex flex-wrap gap-1.5">
-                    {populationGroups.map((pg) => (
-                      <span
-                        key={pg}
-                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300"
-                      >
-                        <span>{pg}</span>
-                        <button
-                          type="button"
-                          onClick={() => removePopulationGroup(pg)}
-                          className="text-gray-400 hover:text-red-500 ml-1"
-                        >
-                          ×
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                </div>
+            {/* Target Population Groups */}
+            <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900 shadow-xs">
+              <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-2">Population Groups</h4>
+              <form onSubmit={handleAddPopGroup} className="flex gap-2 mb-3">
+                <input
+                  type="text"
+                  value={newPopGroup}
+                  onChange={(e) => setNewPopGroup(e.target.value)}
+                  placeholder="New target group..."
+                  className="flex-1 rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-2 text-xs text-gray-900 dark:text-white"
+                />
+                <button type="submit" className="px-3 py-1.5 bg-brand-600 text-white rounded-lg text-xs font-semibold cursor-pointer">
+                  +
+                </button>
+              </form>
+              <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto">
+                {populationGroups.map((p) => (
+                  <span key={p} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-xs text-gray-700 dark:text-gray-300">
+                    {p}
+                    <button onClick={() => removePopulationGroup(p)} className="text-gray-400 hover:text-rose-500 ml-1 cursor-pointer">×</button>
+                  </span>
+                ))}
               </div>
             </div>
           </div>
@@ -628,7 +674,7 @@ export default function SectorSettings() {
             Sector Reporting Cycle & Submission Deadlines
           </h3>
           <p className="text-xs text-gray-500 dark:text-gray-400 mb-6">
-            Configure the current active 5W reporting cycle, cutoff date, and operational freeze for North East Nigeria partners.
+            Configure the current active 5W reporting cycle, cutoff date, and operational freeze for North East Nigeria partners. Saved directly in database.
           </p>
 
           <form onSubmit={handleSaveCycle} className="space-y-5">
@@ -644,7 +690,7 @@ export default function SectorSettings() {
                   onChange={(e) => setCycleMonth(e.target.value)}
                   className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-3 text-xs sm:text-sm text-gray-900 dark:text-white font-mono"
                 />
-                <p className="text-[11px] text-gray-400 mt-1">Designates the operational round period.</p>
+                <p className="text-[11px] text-gray-400 mt-1">Designates the operational round period (e.g. 2026-08).</p>
               </div>
 
               <div>
@@ -658,7 +704,7 @@ export default function SectorSettings() {
                   onChange={(e) => setCycleDeadline(e.target.value)}
                   className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-3 text-xs sm:text-sm text-gray-900 dark:text-white font-mono"
                 />
-                <p className="text-[11px] text-gray-400 mt-1">Partners will see this deadline cutoff date.</p>
+                <p className="text-[11px] text-gray-400 mt-1">Reflected on public banner & submit report page.</p>
               </div>
             </div>
 
@@ -708,45 +754,348 @@ export default function SectorSettings() {
                 type="submit"
                 className="px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-brand-600 hover:bg-brand-700 text-white shadow-sm transition-all cursor-pointer"
               >
-                Save Cycle & Deadlines
+                Save Cycle & Deadlines to DB
               </button>
             </div>
           </form>
         </div>
       )}
 
-      {/* TAB 3: GENERAL SYSTEM CONFIGURATION */}
+      {/* TAB 3: RESOURCE CENTRE & TECHNICAL GUIDANCE */}
+      {activeTab === "resources" && (
+        <div className="space-y-6">
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900 shadow-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+              <div>
+                <h3 className="text-base font-bold text-gray-900 dark:text-white mb-1">
+                  Resource Centre & Technical Guidance Repository
+                </h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Manage official reference materials, SOPs, SPHERE standards, and reporting dictionaries displayed publicly.
+                </p>
+              </div>
+              <button
+                onClick={openNewResourceModal}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-brand-600 hover:bg-brand-700 text-white shadow-sm transition-all cursor-pointer whitespace-nowrap"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+                </svg>
+                <span>Add Technical Document</span>
+              </button>
+            </div>
+
+            {/* Resources List Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {resources.map((item) => {
+                const isPub = item.is_published ?? item.isPublished ?? true;
+                const badgeColor = item.badge_color || item.badgeColor || "#12707E";
+                return (
+                  <div
+                    key={item.id}
+                    className={`rounded-xl border p-5 flex flex-col justify-between transition-all ${
+                      isPub
+                        ? "border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800/40"
+                        : "border-dashed border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 opacity-60"
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between gap-2 mb-3">
+                        <span
+                          className="text-[11px] font-mono font-bold px-2 py-0.5 rounded"
+                          style={{ color: badgeColor, backgroundColor: `${badgeColor}15` }}
+                        >
+                          {item.category}
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[11px] font-mono bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded">
+                            {item.format} · {item.size}
+                          </span>
+                          {!isPub && (
+                            <span className="text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300 px-1.5 py-0.5 rounded">
+                              Hidden
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <h4 className="font-bold text-sm text-gray-900 dark:text-white mb-2 leading-snug">
+                        {item.title}
+                      </h4>
+
+                      <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mb-3">
+                        {item.description}
+                      </p>
+
+                      {item.highlights && item.highlights.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mb-4">
+                          {item.highlights.map((h, i) => (
+                            <span
+                              key={i}
+                              className="text-[10px] bg-gray-100 dark:bg-gray-700/60 text-gray-600 dark:text-gray-300 px-1.5 py-0.5 rounded"
+                            >
+                              ✓ {h}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="pt-3 border-t border-gray-100 dark:border-gray-700/60 flex items-center justify-between">
+                      <div className="text-[11px] text-gray-400 font-mono truncate max-w-[140px]" title={item.file_name || item.fileName}>
+                        📄 {item.file_name || item.fileName}
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleTogglePublishResource(item)}
+                          className="text-[11px] font-semibold text-gray-500 hover:text-brand-600 dark:text-gray-400 dark:hover:text-brand-400 cursor-pointer"
+                          title={isPub ? "Hide from public view" : "Publish to Resource Centre"}
+                        >
+                          {isPub ? "Unpublish" : "Publish"}
+                        </button>
+                        <button
+                          onClick={() => openEditResourceModal(item)}
+                          className="text-[11px] font-semibold text-brand-600 hover:text-brand-700 dark:text-brand-400 cursor-pointer"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteResource(item)}
+                          className="text-[11px] font-semibold text-rose-600 hover:text-rose-700 dark:text-rose-400 cursor-pointer"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* RESOURCE EDIT / CREATE MODAL */}
+      {showResourceModal && (
+        <div className="fixed inset-0 z-99999 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-gray-200 dark:border-gray-800 my-8">
+            <div className="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-gray-800 mb-4">
+              <h3 className="font-bold text-base text-gray-900 dark:text-white">
+                {editingResource ? "Edit Guidance Document" : "Publish Technical Guidance Document"}
+              </h3>
+              <button
+                onClick={() => setShowResourceModal(false)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-white font-bold text-lg cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveResource} className="space-y-4 text-xs">
+              <div>
+                <label className="block font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  Document Title *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={resTitle}
+                  onChange={(e) => setResTitle(e.target.value)}
+                  placeholder="e.g. Emergency Water Chlorination & FRC Guidelines"
+                  className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-2.5 text-xs text-gray-900 dark:text-white"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                    Category *
+                  </label>
+                  <select
+                    value={resCategory}
+                    onChange={(e) => setResCategory(e.target.value)}
+                    className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-2.5 text-xs text-gray-900 dark:text-white"
+                  >
+                    <option value="Global Cluster Benchmark">Global Cluster Benchmark</option>
+                    <option value="Water Quality TWG">Water Quality TWG</option>
+                    <option value="Sanitation Working Group">Sanitation Working Group</option>
+                    <option value="Information Management">Information Management</option>
+                    <option value="Outbreak Taskforce">Outbreak Taskforce</option>
+                    <option value="Infrastructure & RUWASSA">Infrastructure & RUWASSA</option>
+                    <option value="Hygiene & Community Engagement">Hygiene & Community Engagement</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                    Badge Accent Color
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={resBadgeColor}
+                      onChange={(e) => setResBadgeColor(e.target.value)}
+                      className="w-9 h-9 rounded-lg border-0 cursor-pointer p-0 bg-transparent"
+                    />
+                    <input
+                      type="text"
+                      value={resBadgeColor}
+                      onChange={(e) => setResBadgeColor(e.target.value)}
+                      className="flex-1 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-2 text-xs font-mono text-gray-900 dark:text-white"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                    Format (e.g. PDF, XLSX)
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={resFormat}
+                    onChange={(e) => setResFormat(e.target.value)}
+                    placeholder="PDF"
+                    className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-2.5 text-xs text-gray-900 dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                    File Size (e.g. 4.2 MB)
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={resSize}
+                    onChange={(e) => setResSize(e.target.value)}
+                    placeholder="3.5 MB"
+                    className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-2.5 text-xs text-gray-900 dark:text-white"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  Description & Operational Scope
+                </label>
+                <textarea
+                  rows={2}
+                  value={resDesc}
+                  onChange={(e) => setResDesc(e.target.value)}
+                  placeholder="Summary of operational SOP, thresholds, and target audience..."
+                  className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-2.5 text-xs text-gray-900 dark:text-white"
+                ></textarea>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  Key Standards & Highlights (Comma separated)
+                </label>
+                <input
+                  type="text"
+                  value={resHighlights}
+                  onChange={(e) => setResHighlights(e.target.value)}
+                  placeholder="e.g. 15L Water / Person / Day, 20 Persons Per Latrine, FRC 0.5 mg/L"
+                  className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-2.5 text-xs text-gray-900 dark:text-white"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                    File Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={resFileName}
+                    onChange={(e) => setResFileName(e.target.value)}
+                    placeholder="SPHERE_WASH_Standards_2026.pdf"
+                    className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-2.5 text-xs font-mono text-gray-900 dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                    Download URL / Path
+                  </label>
+                  <input
+                    type="text"
+                    value={resFileUrl}
+                    onChange={(e) => setResFileUrl(e.target.value)}
+                    placeholder="/documents/SPHERE_WASH_Standards_2026.pdf"
+                    className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-2.5 text-xs font-mono text-gray-900 dark:text-white"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-800">
+                <div>
+                  <span className="font-bold text-gray-900 dark:text-white block">Publish to Public Portal</span>
+                  <span className="text-[11px] text-gray-400">Make visible on landing page and partner guidance tabs</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={resIsPublished}
+                  onChange={(e) => setResIsPublished(e.target.checked)}
+                  className="w-4 h-4 rounded text-brand-600 focus:ring-brand-500 cursor-pointer"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-3 border-t border-gray-100 dark:border-gray-800">
+                <button
+                  type="button"
+                  onClick={() => setShowResourceModal(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl text-xs font-bold bg-brand-600 hover:bg-brand-700 text-white shadow-xs cursor-pointer"
+                >
+                  {editingResource ? "Update Document" : "Publish Document"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 4: GENERAL SYSTEM CONFIGURATION */}
       {activeTab === "system" && (
         <div className="max-w-3xl rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900 shadow-xs">
           <h3 className="text-base font-bold text-gray-900 dark:text-white mb-1">
-            Platform Identity & Form Governance Rules
+            General Sector Platform Settings
           </h3>
           <p className="text-xs text-gray-500 dark:text-gray-400 mb-6">
-            Configure system branding, operational defaults, and validation strictness across all 5W modules.
+            Configure platform branding, humanitarian operational scope, and data entry rules.
           </p>
 
-          <form onSubmit={handleSaveSystemConfig} className="space-y-5">
+          <form onSubmit={handleSaveSystemConfig} className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                Platform Title
+                Platform Title & Branding
               </label>
               <input
                 type="text"
-                required
                 value={platformTitle}
                 onChange={(e) => setPlatformTitle(e.target.value)}
-                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-2.5 text-xs sm:text-sm text-gray-900 dark:text-white font-medium"
+                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-2.5 text-xs text-gray-900 dark:text-white font-medium"
               />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                  Sector Lead Body / Agency
+                  Lead & Co-Lead Coordination Agencies
                 </label>
                 <input
                   type="text"
-                  required
                   value={leadAgency}
                   onChange={(e) => setLeadAgency(e.target.value)}
                   className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-2.5 text-xs text-gray-900 dark:text-white"
@@ -755,44 +1104,41 @@ export default function SectorSettings() {
 
               <div>
                 <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                  Operational Context Scope
+                  Default Target State
                 </label>
-                <input
-                  type="text"
-                  required
-                  value={operationalContext}
-                  onChange={(e) => setOperationalContext(e.target.value)}
+                <select
+                  value={defaultState}
+                  onChange={(e) => setDefaultState(e.target.value as any)}
                   className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-2.5 text-xs text-gray-900 dark:text-white"
-                />
+                >
+                  <option value="Borno">Borno (Hub / Highest Need)</option>
+                  <option value="Adamawa">Adamawa</option>
+                  <option value="Yobe">Yobe</option>
+                </select>
               </div>
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                Default State for New Records
+                Humanitarian Response Context Tagline
               </label>
-              <select
-                value={defaultState}
-                onChange={(e) => setDefaultState(e.target.value as "Borno" | "Adamawa" | "Yobe")}
-                className="w-full sm:w-1/2 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-2.5 text-xs text-gray-900 dark:text-white"
-              >
-                <option value="Borno">Borno State</option>
-                <option value="Adamawa">Adamawa State</option>
-                <option value="Yobe">Yobe State</option>
-              </select>
+              <input
+                type="text"
+                value={operationalContext}
+                onChange={(e) => setOperationalContext(e.target.value)}
+                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-2.5 text-xs text-gray-900 dark:text-white"
+              />
             </div>
 
-            <div className="pt-3 border-t border-gray-100 dark:border-gray-800 space-y-4">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400">
-                5W Field Form Validation Controls
+            <div className="pt-2 border-t border-gray-100 dark:border-gray-800 space-y-3">
+              <h4 className="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wider">
+                Submission Validation & QA Rules
               </h4>
 
-              <div className="flex items-center justify-between p-3 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30">
+              <div className="flex items-center justify-between p-3 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/40">
                 <div>
-                  <div className="text-xs font-bold text-gray-900 dark:text-white">Require GPS Coordinates Verification</div>
-                  <div className="text-[11px] text-gray-500 dark:text-gray-400">
-                    Ensures partner entries provide valid latitude/longitude within BAY state bounds.
-                  </div>
+                  <div className="text-xs font-bold text-gray-900 dark:text-white">Strict GPS Coordinate Enforcement</div>
+                  <div className="text-[11px] text-gray-400">Require valid latitude/longitude for all completed infrastructure works.</div>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input
@@ -805,12 +1151,10 @@ export default function SectorSettings() {
                 </label>
               </div>
 
-              <div className="flex items-center justify-between p-3 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30">
+              <div className="flex items-center justify-between p-3 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/40">
                 <div>
-                  <div className="text-xs font-bold text-gray-900 dark:text-white">Enforce PWD Disaggregation</div>
-                  <div className="text-[11px] text-gray-500 dark:text-gray-400">
-                    Mandates entry of Persons with Disabilities reached in Section 05.
-                  </div>
+                  <div className="text-xs font-bold text-gray-900 dark:text-white">Mandatory Disability (PWD) Disaggregation</div>
+                  <div className="text-[11px] text-gray-400">Enforce Washington Group disability questions on hygiene & kit distributions.</div>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input
@@ -822,137 +1166,104 @@ export default function SectorSettings() {
                   <div className="w-9 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand-600"></div>
                 </label>
               </div>
-
-              <div className="flex items-center justify-between p-3 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30">
-                <div>
-                  <div className="text-xs font-bold text-gray-900 dark:text-white">Form Auto-Save in Browser</div>
-                  <div className="text-[11px] text-gray-500 dark:text-gray-400">
-                    Periodically saves incomplete field report progress locally to prevent data loss.
-                  </div>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={autoSaveDrafts}
-                    onChange={(e) => setAutoSaveDrafts(e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-9 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand-600"></div>
-                </label>
-              </div>
             </div>
 
-            <div className="flex justify-end pt-2">
+            <div className="flex justify-end pt-3">
               <button
                 type="submit"
                 className="px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-brand-600 hover:bg-brand-700 text-white shadow-sm transition-all cursor-pointer"
               >
-                Save System Settings
+                Save System Configuration to DB
               </button>
             </div>
           </form>
         </div>
       )}
 
-      {/* TAB 4: ALERTS & NOTIFICATIONS */}
+      {/* TAB 5: ALERTS & NOTIFICATION RULES */}
       {activeTab === "alerts" && (
         <div className="max-w-3xl rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900 shadow-xs">
           <h3 className="text-base font-bold text-gray-900 dark:text-white mb-1">
-            Automated Alerts & Early Warning Thresholds
+            Automated Alerts & Communication Triggers
           </h3>
           <p className="text-xs text-gray-500 dark:text-gray-400 mb-6">
             Configure automated cluster circular triggers, cholera outbreak warning badges, and deadline reminders.
           </p>
 
-          <form onSubmit={handleSaveAlertsConfig} className="space-y-5">
-            <div className="p-4 rounded-xl border border-brand-200 bg-brand-50/50 dark:border-brand-900 dark:bg-brand-950/30">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="text-xs font-bold text-brand-950 dark:text-brand-100">
-                    Automated Deadline Reminders
-                  </h4>
-                  <p className="text-[11px] text-brand-800 dark:text-brand-300">
-                    Dispatches countdown reminders to accredited partner focal points ahead of cutoff.
-                  </p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={enableDeadlineReminders}
-                    onChange={(e) => setEnableDeadlineReminders(e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
-                </label>
+          <form onSubmit={handleSaveAlertsConfig} className="space-y-4">
+            <div className="flex items-center justify-between p-3 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/40">
+              <div>
+                <div className="text-xs font-bold text-gray-900 dark:text-white">Submission Deadline Automated Broadcasts</div>
+                <div className="text-[11px] text-gray-400">Send reminder emails to partner focal points prior to cycle cutoff.</div>
               </div>
-
-              {enableDeadlineReminders && (
-                <div className="mt-3 pt-3 border-t border-brand-200/60 dark:border-brand-900/60">
-                  <label className="block text-xs font-semibold text-brand-900 dark:text-brand-200 mb-1">
-                    Send Reminder (Days Prior to Deadline)
-                  </label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={14}
-                    value={reminderDaysBefore}
-                    onChange={(e) => setReminderDaysBefore(Number(e.target.value))}
-                    className="w-32 rounded-lg border border-brand-300 dark:border-brand-700 bg-white dark:bg-gray-800 px-3 py-1.5 text-xs font-bold"
-                  />
-                </div>
-              )}
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={enableDeadlineReminders}
+                  onChange={(e) => setEnableDeadlineReminders(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-9 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand-600"></div>
+              </label>
             </div>
 
-            <div className="p-4 rounded-xl border border-rose-200 bg-rose-50/50 dark:border-rose-900 dark:bg-rose-950/30">
-              <h4 className="text-xs font-bold text-rose-950 dark:text-rose-100 mb-1">
-                Cholera / AWD Emergency Surge Alert Threshold
-              </h4>
-              <p className="text-[11px] text-rose-800 dark:text-rose-300 mb-3">
-                Minimum confirmed cases in any single LGA required to trigger the high-priority warning banner on the Coordinator Desk.
-              </p>
-              <div className="flex items-center gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  Reminder Window (Days Before Deadline)
+                </label>
                 <input
                   type="number"
-                  min={1}
-                  max={50}
+                  min="1"
+                  max="14"
+                  value={reminderDaysBefore}
+                  onChange={(e) => setReminderDaysBefore(Number(e.target.value))}
+                  className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-2.5 text-xs text-gray-900 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  Cholera Surge Trigger Threshold (Cases/LGA)
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="100"
                   value={choleraAlertThreshold}
                   onChange={(e) => setCholeraAlertThreshold(Number(e.target.value))}
-                  className="w-32 rounded-lg border border-rose-300 dark:border-rose-700 bg-white dark:bg-gray-800 px-3 py-1.5 text-xs font-bold"
+                  className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-2.5 text-xs text-gray-900 dark:text-white"
                 />
-                <span className="text-xs text-rose-900 dark:text-rose-200 font-medium">Cases per LGA</span>
               </div>
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                Cluster Helpdesk & Reply-To Email
+                Official Sector Reply-To Email
               </label>
               <input
                 type="email"
-                required
                 value={replyToEmail}
                 onChange={(e) => setReplyToEmail(e.target.value)}
-                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-2.5 text-xs sm:text-sm text-gray-900 dark:text-white"
+                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-2.5 text-xs text-gray-900 dark:text-white font-mono"
               />
-              <p className="text-[11px] text-gray-400 mt-1">Address displayed on automated notifications for partner queries.</p>
             </div>
 
-            <div className="flex justify-end pt-2">
+            <div className="flex justify-end pt-3">
               <button
                 type="submit"
                 className="px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-brand-600 hover:bg-brand-700 text-white shadow-sm transition-all cursor-pointer"
               >
-                Save Alerts Configuration
+                Save Alert Settings to DB
               </button>
             </div>
           </form>
         </div>
       )}
 
-      {/* TAB 5: INTEGRATIONS & DATA BACKUP */}
+      {/* TAB 6: INTEGRATIONS & DATA BACKUP */}
       {activeTab === "integrations" && (
         <div className="space-y-6 max-w-3xl">
-          {/* HDX Integration */}
           <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900 shadow-xs">
             <h3 className="text-base font-bold text-gray-900 dark:text-white mb-1">
               Humanitarian Data Exchange (HDX) Connector
@@ -996,13 +1307,12 @@ export default function SectorSettings() {
                   type="submit"
                   className="px-4 py-2 rounded-xl text-xs font-bold bg-brand-600 hover:bg-brand-700 text-white shadow-xs cursor-pointer"
                 >
-                  Save Integration Settings
+                  Save Integration Settings to DB
                 </button>
               </div>
             </form>
           </div>
 
-          {/* Configuration Snapshot Backup & Factory Reset */}
           <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900 shadow-xs">
             <h3 className="text-base font-bold text-gray-900 dark:text-white mb-1">
               Configuration Snapshot & Backup
@@ -1035,10 +1345,9 @@ export default function SectorSettings() {
         </div>
       )}
 
-      {/* TAB 6: LOCATIONS (STATES, LGAS & WARDS) */}
+      {/* TAB 7: LOCATIONS (STATES, LGAS & WARDS) */}
       {activeTab === "locations" && (
         <div className="space-y-6">
-          {/* Header Banner */}
           <div className="rounded-2xl border border-brand-200 dark:border-brand-900/60 bg-gradient-to-r from-brand-50/70 to-emerald-50/50 dark:from-brand-950/40 dark:to-emerald-950/20 p-5 shadow-xs">
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -1048,257 +1357,188 @@ export default function SectorSettings() {
                     Live 5W Sync
                   </span>
                 </h3>
-                <p className="mt-1 text-xs text-gray-600 dark:text-gray-300 max-w-3xl">
-                  Configure the official geographic hierarchy of the North East humanitarian response. States and LGAs defined here automatically populate user profile registrations in User Management, and strictly bind the 5W reporting dropdowns and ward selectors for field partners.
+                <p className="text-xs text-gray-600 dark:text-gray-300 mt-1 max-w-2xl">
+                  Manage the geographic hierarchy used across the 5W reporting form, coverage maps, and partner submissions. Changes update the database in real-time.
                 </p>
-              </div>
-              <div className="hidden sm:flex items-center gap-2">
-                <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-white/80 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300">
-                  {states.length} Active States
-                </span>
               </div>
             </div>
           </div>
 
-          {/* 3-Column Interactive Location Matrix */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-            {/* Panel 1: States */}
-            <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900 shadow-xs flex flex-col h-[580px]">
-              <div className="flex items-center justify-between pb-3 mb-3 border-b border-gray-100 dark:border-gray-800">
-                <div>
-                  <h4 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-1.5">
-                    <span>1. Operational States</span>
-                    <span className="text-xs text-brand-600 dark:text-brand-400">({states.length})</span>
-                  </h4>
-                  <p className="text-[11px] text-gray-400">Select state to manage LGAs</p>
-                </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Level 1: States */}
+            <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900 shadow-xs flex flex-col">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-lg bg-brand-100 dark:bg-brand-900/50 text-brand-700 dark:text-brand-300 text-xs font-bold flex items-center justify-center">1</span>
+                  <span>Covered States ({states.length})</span>
+                </h4>
               </div>
 
-              {/* States List */}
-              <div className="flex-1 overflow-y-auto space-y-1.5 pr-1">
-                {states.map((st) => {
-                  const isSelected = selectedLocState.toLowerCase() === st.toLowerCase();
-                  const lgaCount = getLgasForState(st).length;
-                  return (
+              <form onSubmit={handleAddStateSubmit} className="flex gap-2 mb-4">
+                <input
+                  type="text"
+                  value={newStateInput}
+                  onChange={(e) => setNewStateInput(e.target.value)}
+                  placeholder="New state name..."
+                  className="flex-1 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-2.5 text-xs text-gray-900 dark:text-white"
+                />
+                <button type="submit" className="px-3.5 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold cursor-pointer">
+                  + Add
+                </button>
+              </form>
+
+              <div className="space-y-1.5 flex-1 overflow-y-auto max-h-[400px]">
+                {states.map((st) => (
+                  <div
+                    key={st}
+                    onClick={() => {
+                      setSelectedLocState(st);
+                      const stateLgas = getLgasForState(st);
+                      setSelectedLocLga(stateLgas[0] || "");
+                    }}
+                    className={`flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer ${
+                      selectedLocState.toLowerCase() === st.toLowerCase()
+                        ? "border-brand-500 bg-brand-50/60 dark:bg-brand-950/40 text-brand-900 dark:text-brand-100 shadow-xs font-bold"
+                        : "border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/40 text-gray-700 dark:text-gray-300 text-xs font-medium"
+                    }`}
+                  >
+                    <span>{st}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                        {getLgasForState(st).length} LGAs
+                      </span>
+                      {states.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveStateAction(st);
+                          }}
+                          className="text-gray-400 hover:text-rose-500 text-sm font-bold px-1"
+                        >
+                          ×
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Level 2: LGAs */}
+            <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900 shadow-xs flex flex-col">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-lg bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 text-xs font-bold flex items-center justify-center">2</span>
+                  <span>LGAs in {selectedLocState || "Selected State"}</span>
+                </h4>
+              </div>
+
+              <form onSubmit={handleAddLgaSubmit} className="flex gap-2 mb-4">
+                <input
+                  type="text"
+                  value={newLgaInput}
+                  onChange={(e) => setNewLgaInput(e.target.value)}
+                  placeholder={`Add LGA to ${selectedLocState}...`}
+                  disabled={!selectedLocState}
+                  className="flex-1 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-2.5 text-xs text-gray-900 dark:text-white disabled:opacity-50"
+                />
+                <button
+                  type="submit"
+                  disabled={!selectedLocState}
+                  className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold cursor-pointer"
+                >
+                  + Add
+                </button>
+              </form>
+
+              <div className="space-y-1.5 flex-1 overflow-y-auto max-h-[400px]">
+                {getLgasForState(selectedLocState).length === 0 ? (
+                  <div className="p-4 text-center text-xs text-gray-400">No LGAs configured for {selectedLocState}. Add one above.</div>
+                ) : (
+                  getLgasForState(selectedLocState).map((lga) => (
                     <div
-                      key={st}
-                      onClick={() => {
-                        setSelectedLocState(st);
-                        const lgas = getLgasForState(st);
-                        setSelectedLocLga(lgas[0] || "");
-                      }}
-                      className={`group flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer ${
-                        isSelected
-                          ? "bg-brand-50 dark:bg-brand-950/50 border-brand-500 shadow-xs text-brand-900 dark:text-white ring-1 ring-brand-500/20"
-                          : "bg-gray-50/50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300"
+                      key={lga}
+                      onClick={() => setSelectedLocLga(lga)}
+                      className={`flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer ${
+                        selectedLocLga.toLowerCase() === lga.toLowerCase()
+                          ? "border-emerald-500 bg-emerald-50/60 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-100 shadow-xs font-bold"
+                          : "border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/40 text-gray-700 dark:text-gray-300 text-xs font-medium"
                       }`}
                     >
-                      <div className="flex items-center gap-2.5">
-                        <div
-                          className={`w-2 h-2 rounded-full ${
-                            isSelected ? "bg-brand-600 ring-2 ring-brand-400/40" : "bg-gray-300 dark:bg-gray-600"
-                          }`}
-                        />
-                        <span className="font-bold text-xs">{st}</span>
-                      </div>
+                      <span>{lga}</span>
                       <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-mono">
-                          {lgaCount} LGAs
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                          {getWardsForLga(selectedLocState, lga).length} Wards
                         </span>
-                        {states.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleRemoveStateAction(st);
-                            }}
-                            title={`Remove ${st}`}
-                            className="opacity-0 group-hover:opacity-100 p-1 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-all"
-                          >
-                            ✕
-                          </button>
-                        )}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveLgaAction(lga);
+                          }}
+                          className="text-gray-400 hover:text-rose-500 text-sm font-bold px-1"
+                        >
+                          ×
+                        </button>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-
-              {/* Add State Form */}
-              <form onSubmit={handleAddStateSubmit} className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
-                <label className="block text-[11px] font-bold text-gray-600 dark:text-gray-400 mb-1.5">
-                  Add New State Hub
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={newStateInput}
-                    onChange={(e) => setNewStateInput(e.target.value)}
-                    placeholder="e.g. Taraba"
-                    className="flex-1 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-500"
-                  />
-                  <button
-                    type="submit"
-                    className="px-3 py-2 rounded-xl text-xs font-bold bg-brand-600 hover:bg-brand-700 text-white shadow-xs transition-all shrink-0 cursor-pointer"
-                  >
-                    Add State
-                  </button>
-                </div>
-              </form>
-            </div>
-
-            {/* Panel 2: LGAs in Selected State */}
-            <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900 shadow-xs flex flex-col h-[580px]">
-              <div className="flex items-center justify-between pb-3 mb-3 border-b border-gray-100 dark:border-gray-800">
-                <div>
-                  <h4 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-1.5">
-                    <span>2. LGAs in {selectedLocState}</span>
-                    <span className="text-xs text-brand-600 dark:text-brand-400">
-                      ({getLgasForState(selectedLocState).length})
-                    </span>
-                  </h4>
-                  <p className="text-[11px] text-gray-400">Select LGA to manage wards</p>
-                </div>
-              </div>
-
-              {/* LGA List */}
-              <div className="flex-1 overflow-y-auto space-y-1.5 pr-1">
-                {getLgasForState(selectedLocState).length === 0 ? (
-                  <div className="p-6 text-center text-xs text-gray-400">
-                    No LGAs registered in {selectedLocState} yet. Add one below.
-                  </div>
-                ) : (
-                  getLgasForState(selectedLocState).map((lga) => {
-                    const isSelected = selectedLocLga.toLowerCase() === lga.toLowerCase();
-                    const wardCount = getWardsForLga(selectedLocState, lga).length;
-                    return (
-                      <div
-                        key={lga}
-                        onClick={() => setSelectedLocLga(lga)}
-                        className={`group flex items-center justify-between p-2.5 rounded-xl border transition-all cursor-pointer ${
-                          isSelected
-                            ? "bg-brand-50 dark:bg-brand-950/50 border-brand-500 shadow-xs text-brand-900 dark:text-white ring-1 ring-brand-500/20"
-                            : "bg-gray-50/50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300"
-                        }`}
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-xs">{lga}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 font-mono">
-                            {wardCount} Wards
-                          </span>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleRemoveLgaAction(lga);
-                            }}
-                            title={`Remove ${lga}`}
-                            className="opacity-0 group-hover:opacity-100 p-1 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-all"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })
+                  ))
                 )}
               </div>
-
-              {/* Add LGA Form */}
-              <form onSubmit={handleAddLgaSubmit} className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
-                <label className="block text-[11px] font-bold text-gray-600 dark:text-gray-400 mb-1.5">
-                  Add New LGA in {selectedLocState}
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={newLgaInput}
-                    onChange={(e) => setNewLgaInput(e.target.value)}
-                    placeholder="e.g. Gubio"
-                    className="flex-1 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-500"
-                  />
-                  <button
-                    type="submit"
-                    className="px-3 py-2 rounded-xl text-xs font-bold bg-brand-600 hover:bg-brand-700 text-white shadow-xs transition-all shrink-0 cursor-pointer"
-                  >
-                    Add LGA
-                  </button>
-                </div>
-              </form>
             </div>
 
-            {/* Panel 3: Wards in Selected LGA */}
-            <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900 shadow-xs flex flex-col h-[580px]">
-              <div className="flex items-center justify-between pb-3 mb-3 border-b border-gray-100 dark:border-gray-800">
-                <div>
-                  <h4 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-1.5">
-                    <span>3. Wards in {selectedLocLga || "Selected LGA"}</span>
-                    <span className="text-xs text-brand-600 dark:text-brand-400">
-                      ({selectedLocLga ? getWardsForLga(selectedLocState, selectedLocLga).length : 0})
-                    </span>
-                  </h4>
-                  <p className="text-[11px] text-gray-400">{selectedLocState} · Automated in 5W form</p>
-                </div>
+            {/* Level 3: Wards */}
+            <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900 shadow-xs flex flex-col">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-lg bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 text-xs font-bold flex items-center justify-center">3</span>
+                  <span>Wards in {selectedLocLga || "Selected LGA"}</span>
+                </h4>
               </div>
 
-              {/* Wards List */}
-              <div className="flex-1 overflow-y-auto space-y-1.5 pr-1">
-                {!selectedLocLga ? (
-                  <div className="p-6 text-center text-xs text-gray-400">
-                    Select an LGA from panel 2 to view and manage its wards.
-                  </div>
-                ) : getWardsForLga(selectedLocState, selectedLocLga).length === 0 ? (
-                  <div className="p-6 text-center text-xs text-gray-400">
-                    No custom wards configured for {selectedLocLga}. Add one below.
-                  </div>
+              <form onSubmit={handleAddWardSubmit} className="flex gap-2 mb-4">
+                <input
+                  type="text"
+                  value={newWardInput}
+                  onChange={(e) => setNewWardInput(e.target.value)}
+                  placeholder={`Add Ward to ${selectedLocLga}...`}
+                  disabled={!selectedLocLga}
+                  className="flex-1 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-2.5 text-xs text-gray-900 dark:text-white disabled:opacity-50"
+                />
+                <button
+                  type="submit"
+                  disabled={!selectedLocLga}
+                  className="px-3.5 py-2 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold cursor-pointer"
+                >
+                  + Add
+                </button>
+              </form>
+
+              <div className="space-y-1.5 flex-1 overflow-y-auto max-h-[400px]">
+                {getWardsForLga(selectedLocState, selectedLocLga).length === 0 ? (
+                  <div className="p-4 text-center text-xs text-gray-400">No wards configured for {selectedLocLga}. Add one above.</div>
                 ) : (
                   getWardsForLga(selectedLocState, selectedLocLga).map((ward) => (
                     <div
                       key={ward}
-                      className="group flex items-center justify-between p-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all text-gray-800 dark:text-gray-200"
+                      className="flex items-center justify-between p-2.5 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30 text-xs font-medium text-gray-700 dark:text-gray-300"
                     >
-                      <div className="flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                        <span className="font-semibold text-xs">{ward}</span>
-                      </div>
+                      <span className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                        {ward}
+                      </span>
                       <button
                         type="button"
                         onClick={() => handleRemoveWardAction(ward)}
-                        title={`Remove ward ${ward}`}
-                        className="opacity-0 group-hover:opacity-100 p-1 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-all"
+                        className="text-gray-400 hover:text-rose-500 text-sm font-bold px-1 cursor-pointer"
                       >
-                        ✕
+                        ×
                       </button>
                     </div>
                   ))
                 )}
               </div>
-
-              {/* Add Ward Form */}
-              <form onSubmit={handleAddWardSubmit} className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
-                <label className="block text-[11px] font-bold text-gray-600 dark:text-gray-400 mb-1.5">
-                  Add Ward in {selectedLocLga || "LGA"}
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={newWardInput}
-                    onChange={(e) => setNewWardInput(e.target.value)}
-                    placeholder="e.g. Hausari II"
-                    disabled={!selectedLocLga}
-                    className="flex-1 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:opacity-50"
-                  />
-                  <button
-                    type="submit"
-                    disabled={!selectedLocLga}
-                    className="px-3 py-2 rounded-xl text-xs font-bold bg-brand-600 hover:bg-brand-700 text-white shadow-xs transition-all shrink-0 disabled:opacity-50 cursor-pointer"
-                  >
-                    Add Ward
-                  </button>
-                </div>
-              </form>
             </div>
           </div>
         </div>
@@ -1308,4 +1548,3 @@ export default function SectorSettings() {
 }
 
 SectorSettings.layout = (page: any) => <AppLayout>{page}</AppLayout>;
-

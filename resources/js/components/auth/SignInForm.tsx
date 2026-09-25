@@ -16,18 +16,30 @@ export default function SignInForm() {
   const [loading, setLoading] = useState(false);
   const [selectedRole] = useState<UserRole>("coordinator");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     if (!email.trim()) {
       setError("Please enter your email address.");
       return;
     }
+    if (!password.trim()) {
+      setError("Please enter your password.");
+      return;
+    }
     setLoading(true);
-    setTimeout(() => {
-      login(email, selectedRole);
+    try {
+      const result = await login(email, password, rememberMe);
+      if (result.success) {
+        navigate("/admin/dashboard");
+      } else {
+        setError(result.message || "Invalid email or password. Please try again.");
+      }
+    } catch (err: any) {
+      setError(err?.message || "Authentication error occurred. Please try again.");
+    } finally {
       setLoading(false);
-      navigate("/admin/dashboard");
-    }, 250);
+    }
   };
 
   return (

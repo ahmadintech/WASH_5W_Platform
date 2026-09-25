@@ -4,6 +4,8 @@ namespace Database\Seeders;
 
 use App\Models\Partner;
 use App\Models\Report5W;
+use App\Models\ResourceDocument;
+use App\Models\SectorSetting;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -21,33 +23,98 @@ class WASH5WSeeder extends Seeder
         $coordinatorRole = Role::firstOrCreate(['name' => 'coordinator']);
         $partnerRole = Role::firstOrCreate(['name' => 'partner']);
 
-        // 2. Create Default System Accounts
-        $adminUser = User::firstOrCreate(
+        // 2. Create Default System Accounts with hashed password 'admin2026'
+        $defaultPassword = Hash::make('admin2026');
+
+        $adminUser = User::updateOrCreate(
             ['email' => 'admin@washsector-ne.org'],
             [
                 'name' => 'State WASH Administrator',
-                'password' => Hash::make('password123'),
+                'password' => $defaultPassword,
+                'role_title' => 'Sector Administrator',
+                'organization' => 'WASH Sector North East Nigeria',
+                'organization_type' => 'Government / UN Co-Lead',
+                'state' => 'Borno',
+                'lga' => 'Maiduguri',
+                'status' => 'Active',
             ]
         );
-        $adminUser->assignRole($adminRole);
+        $adminUser->syncRoles([$adminRole]);
 
-        $coordinatorUser = User::firstOrCreate(
+        $coordBorno = User::updateOrCreate(
             ['email' => 'coordinator@washsector-ne.org'],
             [
-                'name' => 'Borno State WASH Coordinator',
-                'password' => Hash::make('password123'),
+                'name' => 'WASH Coordinator — Borno',
+                'password' => $defaultPassword,
+                'role_title' => 'Borno State Coordinator',
+                'organization' => 'WASH Cluster Maiduguri Hub',
+                'organization_type' => 'UN / Coordination Desk',
+                'state' => 'Borno',
+                'lga' => 'Maiduguri',
+                'status' => 'Active',
             ]
         );
-        $coordinatorUser->assignRole($coordinatorRole);
+        $coordBorno->syncRoles([$coordinatorRole]);
 
-        $partnerUser = User::firstOrCreate(
+        $coordBorno2 = User::updateOrCreate(
+            ['email' => 'coordinator-borno@washsector-ne.org'],
+            [
+                'name' => 'WASH Coordinator — Borno',
+                'password' => $defaultPassword,
+                'role_title' => 'Borno State Coordinator',
+                'organization' => 'WASH Cluster Maiduguri Hub',
+                'organization_type' => 'UN / Coordination Desk',
+                'state' => 'Borno',
+                'lga' => 'Maiduguri',
+                'status' => 'Active',
+            ]
+        );
+        $coordBorno2->syncRoles([$coordinatorRole]);
+
+        $coordAdamawa = User::updateOrCreate(
+            ['email' => 'coordinator-adamawa@washsector-ne.org'],
+            [
+                'name' => 'WASH Coordinator — Adamawa',
+                'password' => $defaultPassword,
+                'role_title' => 'Adamawa State Coordinator',
+                'organization' => 'WASH Sub-Cluster Yola Desk',
+                'organization_type' => 'UN / Coordination Desk',
+                'state' => 'Adamawa',
+                'lga' => 'Yola North',
+                'status' => 'Active',
+            ]
+        );
+        $coordAdamawa->syncRoles([$coordinatorRole]);
+
+        $coordYobe = User::updateOrCreate(
+            ['email' => 'coordinator-yobe@washsector-ne.org'],
+            [
+                'name' => 'WASH Coordinator — Yobe',
+                'password' => $defaultPassword,
+                'role_title' => 'Yobe State Coordinator',
+                'organization' => 'WASH Sub-Cluster Damaturu Desk',
+                'organization_type' => 'UN / Coordination Desk',
+                'state' => 'Yobe',
+                'lga' => 'Damaturu',
+                'status' => 'Active',
+            ]
+        );
+        $coordYobe->syncRoles([$coordinatorRole]);
+
+        $partnerUser = User::updateOrCreate(
             ['email' => 'partner@solidarites.org'],
             [
                 'name' => 'Solidarités International Focal Point',
-                'password' => Hash::make('password123'),
+                'password' => $defaultPassword,
+                'role_title' => 'Implementing Partner',
+                'organization' => 'Solidarités International',
+                'organization_type' => 'International NGO',
+                'state' => 'Borno',
+                'lga' => 'Maiduguri',
+                'status' => 'Active',
             ]
         );
-        $partnerUser->assignRole($partnerRole);
+        $partnerUser->syncRoles([$partnerRole]);
 
         // 3. Seed Partners
         $partnersData = [
@@ -99,80 +166,95 @@ class WASH5WSeeder extends Seeder
                 'name' => 'UNICEF Nigeria',
                 'acronym' => 'UNICEF',
                 'org_type' => 'UN Agency',
-                'focal_point_name' => 'UNICEF WASH Team',
-                'focal_point_email' => 'washcluster.nigeria@unicef.org',
-                'focal_point_phone' => '+23480092744357',
-                'donor' => 'Global WASH Cluster',
+                'focal_point_name' => 'Dr. Jane Okoye',
+                'focal_point_email' => 'jokoye@unicef.org',
+                'focal_point_phone' => '+2348030000005',
+                'donor' => 'CERF / ECHO',
                 'states_covered' => ['Borno', 'Adamawa', 'Yobe'],
+                'is_active' => true,
+            ],
+            [
+                'name' => 'Mercy Corps',
+                'acronym' => 'MC',
+                'org_type' => 'International NGO',
+                'focal_point_name' => 'Suleiman Ahmed',
+                'focal_point_email' => 'sahmed@mercycorps.org',
+                'focal_point_phone' => '+2348030000006',
+                'donor' => 'BHA',
+                'states_covered' => ['Borno', 'Yobe'],
                 'is_active' => true,
             ],
         ];
 
-        foreach ($partnersData as $data) {
-            Partner::firstOrCreate(['name' => $data['name']], $data);
+        foreach ($partnersData as $pData) {
+            Partner::firstOrCreate(['name' => $pData['name']], $pData);
         }
 
-        $siPartner = Partner::where('acronym', 'SI')->first();
-
-        // 4. Seed 5W Reports
+        // 4. Seed Comprehensive WASH 5W Reports across Borno, Adamawa, Yobe
         $reports = [
             [
                 'report_code' => 'r_1001',
                 'submitted_at' => now()->subDays(2),
-                'submitted_by_role' => 'partner',
-                'submitted_by_email' => 'partner@solidarites.org',
-                'partner_id' => $siPartner?->id,
-                'org_name' => 'Solidarités International',
-                'org_type' => 'International NGO',
-                'focal_point' => 'Ibrahim Mustapha',
-                'email' => 'imustapha@solidarites-nigeria.org',
-                'donor' => 'BHA / USAID',
-                'activity_type' => 'Water point construction / rehabilitation',
-                'quantity' => 12.00,
-                'unit' => 'Boreholes',
-                'indicator_desc' => 'Solar-powered motorized borehole construction with water tap stands in IDP camps.',
+                'submitted_by_role' => 'admin',
+                'submitted_by_email' => 'admin@washsector-ne.org',
+                'org_name' => 'UNICEF Nigeria',
+                'acronym' => 'UNICEF',
+                'org_type' => 'UN Agency',
+                'focal_point' => 'Dr. Jane Okoye',
+                'email' => 'jokoye@unicef.org',
+                'donor' => 'ECHO / CERF',
+                'activity_type' => 'Solar Motorized Borehole Construction',
+                'quantity' => 3.00,
+                'unit' => 'Solar Boreholes',
+                'indicator' => 'Number of people provided with safe drinking water',
+                'indicator_desc' => 'High-capacity hybrid solar boreholes with 50,000L elevated steel tank and 24 tapstands.',
                 'state' => 'Borno',
-                'lga' => 'Maiduguri',
-                'ward' => 'Bolori II',
-                'settlement' => 'Bakassi IDP Camp',
-                'location_type' => 'IDP camp / camp-like setting',
+                'lga' => 'Bama',
+                'ward' => 'Shehuri',
+                'settlement' => 'Banki IDP Transit Camp',
+                'location_type' => 'IDP Camp',
+                'latitude' => 11.5167,
+                'longitude' => 14.3500,
                 'period' => '2026-08',
                 'status' => 'Completed',
-                'start_date' => '2026-08-01',
-                'end_date' => '2026-08-25',
-                'population_group' => 'IDPs in camps',
-                'pwd' => 72,
-                'men' => 1420,
-                'women' => 1680,
-                'boys' => 1150,
-                'girls' => 1350,
-                'total' => 5600,
+                'start_date' => '2026-07-01',
+                'end_date' => '2026-08-15',
+                'population_group' => 'IDPs in Camp',
+                'pwd' => 240,
+                'men' => 3200,
+                'women' => 4800,
+                'boys' => 2900,
+                'girls' => 3100,
+                'total' => 14000,
             ],
             [
                 'report_code' => 'r_1002',
                 'submitted_at' => now()->subDays(4),
                 'submitted_by_role' => 'partner',
                 'submitted_by_email' => 'partner@solidarites.org',
-                'partner_id' => $siPartner?->id,
                 'org_name' => 'Solidarités International',
+                'acronym' => 'SI',
                 'org_type' => 'International NGO',
                 'focal_point' => 'Ibrahim Mustapha',
                 'email' => 'imustapha@solidarites-nigeria.org',
                 'donor' => 'NHF (Nigeria Humanitarian Fund)',
-                'activity_type' => 'Hygiene kit distribution',
+                'activity_type' => 'Hygiene Kit Distribution',
                 'quantity' => 850.00,
                 'unit' => 'Kits',
+                'indicator' => 'Number of households receiving standard hygiene kits',
                 'indicator_desc' => 'Distribution of standard WASH hygiene kits including Jerrycans, Aquatabs, Soap, and Menstrual Hygiene items.',
                 'state' => 'Borno',
                 'lga' => 'Jere',
                 'ward' => 'Mashamari',
                 'settlement' => 'Muna Garage IDP Site',
-                'location_type' => 'IDP camp / camp-like setting',
+                'location_type' => 'IDP Camp',
+                'latitude' => 11.8600,
+                'longitude' => 13.2200,
                 'period' => '2026-08',
                 'status' => 'Completed',
                 'start_date' => '2026-08-05',
                 'end_date' => '2026-08-20',
-                'population_group' => 'IDPs in camps',
+                'population_group' => 'IDPs in Camp',
                 'pwd' => 95,
                 'men' => 950,
                 'women' => 1400,
@@ -186,24 +268,28 @@ class WASH5WSeeder extends Seeder
                 'submitted_by_role' => 'partner',
                 'submitted_by_email' => 'tmansoor@ng-actionagainsthunger.org',
                 'org_name' => 'Action Against Hunger (ACF)',
+                'acronym' => 'ACF',
                 'org_type' => 'International NGO',
                 'focal_point' => 'Tariq Mansoor',
                 'email' => 'tmansoor@ng-actionagainsthunger.org',
                 'donor' => 'FCDO',
-                'activity_type' => 'Household latrine construction',
+                'activity_type' => 'Emergency Latrine Construction',
                 'quantity' => 85.00,
-                'unit' => 'Latrine stances',
+                'unit' => 'Latrine Stances',
+                'indicator' => 'Number of emergency latrine stances constructed',
                 'indicator_desc' => 'Gender-segregated emergency semi-permanent latrines with handwashing stations.',
                 'state' => 'Borno',
                 'lga' => 'Monguno',
                 'ward' => 'Monguno Central',
                 'settlement' => 'Stadium Camp',
-                'location_type' => 'IDP camp / camp-like setting',
+                'location_type' => 'IDP Camp',
+                'latitude' => 12.6700,
+                'longitude' => 13.6100,
                 'period' => '2026-08',
                 'status' => 'Ongoing',
                 'start_date' => '2026-08-10',
                 'end_date' => '2026-09-15',
-                'population_group' => 'IDPs in camps',
+                'population_group' => 'IDPs in Camp',
                 'pwd' => 64,
                 'men' => 920,
                 'women' => 1140,
@@ -217,19 +303,23 @@ class WASH5WSeeder extends Seeder
                 'submitted_by_role' => 'partner',
                 'submitted_by_email' => 'amina.yusuf@nrc.no',
                 'org_name' => 'Norwegian Refugee Council (NRC)',
+                'acronym' => 'NRC',
                 'org_type' => 'International NGO',
                 'focal_point' => 'Amina Yusuf',
                 'email' => 'amina.yusuf@nrc.no',
                 'donor' => 'NMFA',
-                'activity_type' => 'Water trucking',
+                'activity_type' => 'Emergency Water Trucking',
                 'quantity' => 450000.00,
-                'unit' => 'Litres per day',
+                'unit' => 'Litres/Day',
+                'indicator' => 'Volume of chlorinated water delivered per day',
                 'indicator_desc' => 'Emergency water provision (15 litres/person/day) to newly arrived displaced households.',
                 'state' => 'Borno',
                 'lga' => 'Gwoza',
                 'ward' => 'Gwoza Wakane',
                 'settlement' => 'Transit Site A',
-                'location_type' => 'Informal settlement',
+                'location_type' => 'Informal Settlement',
+                'latitude' => 11.0833,
+                'longitude' => 13.6944,
                 'period' => '2026-08',
                 'status' => 'Completed',
                 'start_date' => '2026-08-01',
@@ -248,24 +338,28 @@ class WASH5WSeeder extends Seeder
                 'submitted_by_role' => 'partner',
                 'submitted_by_email' => 'bello.mohammed@rescue.org',
                 'org_name' => 'International Rescue Committee (IRC)',
+                'acronym' => 'IRC',
                 'org_type' => 'International NGO',
                 'focal_point' => 'Bello Mohammed',
                 'email' => 'bello.mohammed@rescue.org',
                 'donor' => 'USAID / BHA',
-                'activity_type' => 'Desludging services',
+                'activity_type' => 'Mechanical Desludging & Waste Management',
                 'quantity' => 42.00,
-                'unit' => 'Latrine stances',
+                'unit' => 'Latrine Stances',
+                'indicator' => 'Number of latrine pits safely emptied',
                 'indicator_desc' => 'Safe mechanical desludging and waste transport to sector-approved disposal site.',
                 'state' => 'Yobe',
                 'lga' => 'Damaturu',
                 'ward' => 'Kukasare',
                 'settlement' => 'Kasuwar Shanu Settlement',
-                'location_type' => 'Host community',
+                'location_type' => 'Host Community',
+                'latitude' => 11.7470,
+                'longitude' => 11.9608,
                 'period' => '2026-08',
                 'status' => 'Completed',
                 'start_date' => '2026-08-08',
                 'end_date' => '2026-08-22',
-                'population_group' => 'Host community',
+                'population_group' => 'Host Community',
                 'pwd' => 32,
                 'men' => 680,
                 'women' => 790,
@@ -273,10 +367,231 @@ class WASH5WSeeder extends Seeder
                 'girls' => 640,
                 'total' => 2700,
             ],
+            [
+                'report_code' => 'r_1006',
+                'submitted_at' => now()->subDays(3),
+                'submitted_by_role' => 'partner',
+                'submitted_by_email' => 'sahmed@mercycorps.org',
+                'org_name' => 'Mercy Corps',
+                'acronym' => 'MC',
+                'org_type' => 'International NGO',
+                'focal_point' => 'Suleiman Ahmed',
+                'email' => 'sahmed@mercycorps.org',
+                'donor' => 'BHA',
+                'activity_type' => 'Water Point Rehabilitation & Chlorination',
+                'quantity' => 12.00,
+                'unit' => 'Handpumps',
+                'indicator' => 'Number of boreholes rehabilitated with water quality testing',
+                'indicator_desc' => 'Rehabilitation of broken India Mark II handpumps and shock chlorination in outbreak wards.',
+                'state' => 'Adamawa',
+                'lga' => 'Yola North',
+                'ward' => 'Jambutu',
+                'settlement' => 'Jambutu Community Center',
+                'location_type' => 'Host Community',
+                'latitude' => 9.2700,
+                'longitude' => 12.4500,
+                'period' => '2026-08',
+                'status' => 'Completed',
+                'start_date' => '2026-08-01',
+                'end_date' => '2026-08-18',
+                'population_group' => 'Host Community',
+                'pwd' => 45,
+                'men' => 1200,
+                'women' => 1800,
+                'boys' => 1100,
+                'girls' => 1300,
+                'total' => 5400,
+            ],
+            [
+                'report_code' => 'r_1007',
+                'submitted_at' => now()->subDays(5),
+                'submitted_by_role' => 'partner',
+                'submitted_by_email' => 'jokoye@unicef.org',
+                'org_name' => 'UNICEF Nigeria',
+                'acronym' => 'UNICEF',
+                'org_type' => 'UN Agency',
+                'focal_point' => 'Dr. Jane Okoye',
+                'email' => 'jokoye@unicef.org',
+                'donor' => 'ECHO',
+                'activity_type' => 'Institutional WASH in Schools & PHCs',
+                'quantity' => 4.00,
+                'unit' => 'Health Facilities',
+                'indicator' => 'Number of PHCs equipped with full water and VIP latrines',
+                'indicator_desc' => 'Comprehensive water supply connection, VIP latrines, and incinerator facilities at Primary Healthcare Centres.',
+                'state' => 'Adamawa',
+                'lga' => 'Mubi South',
+                'ward' => 'Gude',
+                'settlement' => 'Gude PHC Complex',
+                'location_type' => 'Health Facility',
+                'latitude' => 10.2700,
+                'longitude' => 13.2600,
+                'period' => '2026-08',
+                'status' => 'Ongoing',
+                'start_date' => '2026-07-20',
+                'end_date' => '2026-09-30',
+                'population_group' => 'Host Community',
+                'pwd' => 88,
+                'men' => 2100,
+                'women' => 3400,
+                'boys' => 1800,
+                'girls' => 2200,
+                'total' => 9500,
+            ],
+            [
+                'report_code' => 'r_1008',
+                'submitted_at' => now()->subDays(1),
+                'submitted_by_role' => 'partner',
+                'submitted_by_email' => 'bello.mohammed@rescue.org',
+                'org_name' => 'International Rescue Committee (IRC)',
+                'acronym' => 'IRC',
+                'org_type' => 'International NGO',
+                'focal_point' => 'Bello Mohammed',
+                'email' => 'bello.mohammed@rescue.org',
+                'donor' => 'USAID / BHA',
+                'activity_type' => 'Cholera Response & Hygiene Promotion',
+                'quantity' => 1500.00,
+                'unit' => 'Households Reached',
+                'indicator' => 'Number of individuals reached with critical cholera prevention messaging',
+                'indicator_desc' => 'House-to-house hygiene campaigns, distribution of soap and water purification tablets in high-risk zones.',
+                'state' => 'Yobe',
+                'lga' => 'Bade',
+                'ward' => 'Gashua Usur',
+                'settlement' => 'Sabon Gari Ward',
+                'location_type' => 'Host Community',
+                'latitude' => 12.8700,
+                'longitude' => 11.0400,
+                'period' => '2026-08',
+                'status' => 'Completed',
+                'start_date' => '2026-08-12',
+                'end_date' => '2026-08-28',
+                'population_group' => 'Host Community',
+                'pwd' => 70,
+                'men' => 1600,
+                'women' => 2200,
+                'boys' => 1400,
+                'girls' => 1700,
+                'total' => 6900,
+            ],
         ];
 
         foreach ($reports as $rep) {
-            Report5W::firstOrCreate(['report_code' => $rep['report_code']], $rep);
+            Report5W::updateOrCreate(['report_code' => $rep['report_code']], $rep);
+        }
+
+        // 5. Seed Sector Settings in Database
+        SectorSetting::set('reporting_config', [
+            'activeCycle' => '2026-08',
+            'deadlineDate' => '2026-09-12',
+            'isFreezeActive' => false,
+            'notes' => 'Monthly 5W submission window for BAY states humanitarian response. Submission deadline cutoff is strictly enforced for OCHA synchronization.',
+        ], 'cycles', 'Active reporting cycle and submission deadline');
+
+        SectorSetting::set('system_config', [
+            'platformTitle' => 'WASH 5W Activity Reporting Platform',
+            'leadAgency' => 'UNICEF / Federal Ministry of Water Resources',
+            'operationalContext' => 'North East Nigeria (BAY States Humanitarian Response)',
+            'defaultState' => 'Borno',
+            'requireGps' => true,
+            'requirePwd' => true,
+            'autoSaveDrafts' => true,
+            'draftIntervalSeconds' => 30,
+            'enableDeadlineReminders' => true,
+            'reminderDaysBefore' => 3,
+            'choleraAlertThreshold' => 5,
+            'replyToEmail' => 'washcluster.nigeria@unicef.org',
+            'enableHdxSync' => false,
+            'hdxApiKey' => '',
+            'enablePublicDashboard' => true,
+            'dataRetentionDays' => 365,
+        ], 'system', 'Global platform parameters');
+
+        // 6. Seed Technical Guidance & Resource Centre Documents
+        $resources = [
+            [
+                'title' => 'SPHERE Standards: WASH in Humanitarian Response',
+                'category' => 'Global Cluster Benchmark',
+                'format' => 'PDF',
+                'size' => '4.2 MB',
+                'badge_color' => '#12707E',
+                'description' => 'Universal minimum standards for emergency water supply (15L/p/d), sanitation ratios (20 persons/latrine), and handwashing distances.',
+                'highlights' => ['15L Water / Person / Day', '20 Persons Per Latrine', 'FRC 0.5 mg/L Standard'],
+                'file_name' => 'SPHERE_Humanitarian_WASH_Standards_2026.pdf',
+                'file_url' => '/documents/SPHERE_Humanitarian_WASH_Standards_2026.pdf',
+                'is_published' => true,
+                'sort_order' => 1,
+            ],
+            [
+                'title' => 'Emergency Water Chlorination & FRC Guidelines',
+                'category' => 'Water Quality TWG',
+                'format' => 'PDF',
+                'size' => '2.8 MB',
+                'badge_color' => '#2E7D47',
+                'description' => 'Standard operating procedures for batch chlorination, inline doser calibration, pool tester monitoring, and Free Residual Chlorine.',
+                'highlights' => ['FRC Pool Tester SOP', 'Shock Chlorination Protocol', 'Borehole Inline Dosing'],
+                'file_name' => 'WASH_Cluster_Chlorination_Guidelines_NE_Nigeria.pdf',
+                'file_url' => '/documents/WASH_Cluster_Chlorination_Guidelines_NE_Nigeria.pdf',
+                'is_published' => true,
+                'sort_order' => 2,
+            ],
+            [
+                'title' => 'Faecal Sludge Management & Camp Desludging Protocols',
+                'category' => 'Sanitation Working Group',
+                'format' => 'PDF',
+                'size' => '3.5 MB',
+                'badge_color' => '#C1722F',
+                'description' => 'Safe desludging procedures for IDP camps, containment pit designs, lime neutralization, and biological waste handling.',
+                'highlights' => ['Camp Desludging SOP', 'Lime Neutralization Pit', 'Sanitation Worker PPE'],
+                'file_name' => 'Faecal_Sludge_Management_Camp_Protocol_2026.pdf',
+                'file_url' => '/documents/Faecal_Sludge_Management_Camp_Protocol_2026.pdf',
+                'is_published' => true,
+                'sort_order' => 3,
+            ],
+            [
+                'title' => '5W Technical Manual & Indicator Reporting Dictionary',
+                'category' => 'Information Management',
+                'format' => 'XLSX / PDF',
+                'size' => '1.9 MB',
+                'badge_color' => '#6D28D9',
+                'description' => 'Complete reporting dictionary defining all standard 5W activities, disaggregation rules (M/F/Girls/Boys/PWD), and GPS standards.',
+                'highlights' => ['Full Indicator Glossary', 'GPS Coordinate Rules', 'Monthly Data Checklist'],
+                'file_name' => '5W_Reporting_Manual_Indicator_Dictionary_v2026.xlsx',
+                'file_url' => '/documents/5W_Reporting_Manual_Indicator_Dictionary_v2026.xlsx',
+                'is_published' => true,
+                'sort_order' => 4,
+            ],
+            [
+                'title' => 'Case-Area Targeted Intervention (CATI) Cholera SOP',
+                'category' => 'Outbreak Taskforce',
+                'format' => 'PDF',
+                'size' => '2.1 MB',
+                'badge_color' => '#B91C1C',
+                'description' => 'Operational guidelines for 48-hour rapid response cordoning around suspected cholera index cases, disinfection, and soap distribution.',
+                'highlights' => ['48hr Rapid Response Trigger', 'Household Disinfection Kits', 'Ring Hygiene Promotion'],
+                'file_name' => 'CATI_Cholera_Response_Mechanism_NE_Nigeria.pdf',
+                'file_url' => '/documents/CATI_Cholera_Response_Mechanism_NE_Nigeria.pdf',
+                'is_published' => true,
+                'sort_order' => 5,
+            ],
+            [
+                'title' => 'Solarized Motorized Borehole Design & QA Standards',
+                'category' => 'Infrastructure & RUWASSA',
+                'format' => 'PDF',
+                'size' => '5.4 MB',
+                'badge_color' => '#0B3C46',
+                'description' => 'Technical engineering specifications for submersible solar pumping systems, hybrid inverters, and aquifer yield testing in the Chad Basin.',
+                'highlights' => ['Solar PV Sizing Tables', 'Hybrid Inverter QA', 'Aquifer Testing Rules'],
+                'file_name' => 'Solar_Borehole_Infrastructure_Manual_RUWASSA.pdf',
+                'file_url' => '/documents/Solar_Borehole_Infrastructure_Manual_RUWASSA.pdf',
+                'is_published' => true,
+                'sort_order' => 6,
+            ],
+        ];
+
+        foreach ($resources as $res) {
+            ResourceDocument::updateOrCreate(
+                ['title' => $res['title']],
+                $res
+            );
         }
     }
 }

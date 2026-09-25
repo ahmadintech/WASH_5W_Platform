@@ -114,8 +114,9 @@ const COLUMNS = [
 ];
 
 export default function SubmitReport() {
-  const { addReport } = useWashData();
+  const { addReport, submitBatchReports, reportingConfig } = useWashData();
   const { currentUser } = useAuth();
+  const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -160,7 +161,7 @@ export default function SubmitReport() {
   // ========================================================
   const createBlankFormData = (): MatrixEntry => ({
     id: `entry-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-    reportMonth: "",
+    reportMonth: reportingConfig?.activeCycle || "2026-08",
     reportDate: new Date().toISOString().slice(0, 10),
     orgName: "",
     acronym: "",
@@ -535,78 +536,82 @@ export default function SubmitReport() {
     }
   };
 
-  // Submit all matrix records into the central platform context
-  const handleSubmitAllToPlatform = () => {
+  // Submit all matrix records into the central platform database & context
+  const handleSubmitAllToPlatform = async () => {
     if (entries.length === 0) {
       showToast("Please add at least one entry to the matrix first.", undefined, true);
       return;
     }
 
-    entries.forEach((e) => {
-      addReport({
-        orgName: e.orgName || pcOrg,
-        acronym: e.acronym || pcAcronym,
-        orgType: e.orgType || pcType,
-        focalPoint: pcContact || currentUser.name,
-        phone: pcPhone,
-        email: pcEmail || currentUser.email,
-        donor: e.donor,
-        implPartners: e.implPartners,
-        reportMonth: e.reportMonth,
-        reportDate: e.reportDate,
+    setSubmitting(true);
 
-        domain: e.domain,
-        emergType: e.emergType,
-        activityType: e.activity,
-        indicator: e.indicator,
-        indicatorDesc: e.indicator,
-        unit: e.unit,
-        hrp: e.hrp,
-        qtyPlanned: Number(e.qtyPlanned) || 0,
-        qtyAchieved: Number(e.qtyAchieved) || 0,
-        quantity: Number(e.qtyAchieved) || 0,
+    const payload = entries.map((e) => ({
+      org_name: e.orgName || pcOrg || "WASH Partner",
+      acronym: e.acronym || pcAcronym,
+      org_type: e.orgType || pcType || "International NGO",
+      focal_point: pcContact || currentUser.name,
+      phone: pcPhone,
+      email: pcEmail || currentUser.email,
+      donor: e.donor,
+      impl_partners: e.implPartners,
+      report_month: e.reportMonth || "2026-08",
+      report_date: e.reportDate,
+      domain: e.domain,
+      emerg_type: e.emergType,
+      activity_type: e.activity || "Water Supply Provision",
+      indicator: e.indicator,
+      indicator_desc: e.indicator || "Standard WASH 5W Response",
+      unit: e.unit || "Borehole",
+      hrp: e.hrp || "Yes",
+      qty_planned: Number(e.qtyPlanned) || 0,
+      qty_achieved: Number(e.qtyAchieved) || 0,
+      quantity: Number(e.qtyAchieved) || Number(e.qtyPlanned) || 1,
+      state: (e.state as "Borno" | "Adamawa" | "Yobe") || "Borno",
+      pcode1: e.pcode1,
+      lga: e.lga || "Maiduguri",
+      pcode2: e.pcode2,
+      ward: e.ward,
+      pcode3: e.pcode3,
+      site_type: e.siteType,
+      location_type: e.siteType || "Host Community",
+      location_name: e.locationName,
+      settlement: e.locationName,
+      location_pop: e.locationPop,
+      latlong: e.latlong,
+      period: e.reportMonth || "2026-08",
+      status: (e.status as any) || "Completed",
+      start_date: e.startDate || null,
+      end_date: e.endDate || null,
+      comments: e.comments,
+      benef_type: e.benefType,
+      population_group: e.benefType || "IDPs in Camp",
+      pwd: 0,
+      boys: Number(e.boys) || 0,
+      girls: Number(e.girls) || 0,
+      men: Number(e.men) || 0,
+      women: Number(e.women) || 0,
+      total: Number(e.totalBenef) || ((Number(e.men) || 0) + (Number(e.women) || 0) + (Number(e.boys) || 0) + (Number(e.girls) || 0)),
+      submitted_by_role: currentUser.role,
+      submitted_by_email: currentUser.email,
+    }));
 
-        state: (e.state as "Borno" | "Adamawa" | "Yobe") || "Borno",
-        pcode1: e.pcode1,
-        lga: e.lga,
-        pcode2: e.pcode2,
-        ward: e.ward,
-        pcode3: e.pcode3,
-        siteType: e.siteType,
-        locationType: e.siteType || "Community",
-        locationName: e.locationName,
-        settlement: e.locationName,
-        locationPop: e.locationPop,
-        latlong: e.latlong,
-
-        period: e.reportMonth || "2026-01",
-        status: (e.status as any) || "Completed",
-        startDate: e.startDate,
-        endDate: e.endDate,
-        comments: e.comments,
-
-        benefType: e.benefType,
-        populationGroup: e.benefType || "IDPs",
-        pwd: 0,
-        boys: Number(e.boys) || 0,
-        girls: Number(e.girls) || 0,
-        men: Number(e.men) || 0,
-        women: Number(e.women) || 0,
-        total: Number(e.totalBenef) || 0,
-
-        submittedByRole: currentUser.role,
-        submittedByEmail: currentUser.email,
-      });
-    });
-
-    showToast(
-      `${entries.length} 5W Activity ${entries.length === 1 ? "Record" : "Records"} Submitted!`,
-      "Synchronized with central Borno, Adamawa & Yobe 5W response monitoring matrix."
-    );
-
-    setTimeout(() => {
-      navigate("/reports-list");
-    }, 1200);
+    try {
+      await submitBatchReports(payload);
+      showToast(
+        `${entries.length} 5W Activity ${entries.length === 1 ? "Record" : "Records"} Stored in Database!`,
+        "Synchronized with live central Borno, Adamawa & Yobe 5W response monitoring matrix."
+      );
+      setTimeout(() => {
+        navigate("/reports-list");
+      }, 1000);
+    } catch (err: any) {
+      showToast("Submission warning: saved locally.", err?.message, true);
+      setTimeout(() => {
+        navigate("/reports-list");
+      }, 1200);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   // Calculate total beneficiaries in current session
