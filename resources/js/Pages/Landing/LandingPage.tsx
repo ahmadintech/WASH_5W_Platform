@@ -344,10 +344,10 @@ export default function LandingPage() {
         position: "relative",
         background: "linear-gradient(135deg, rgba(4, 20, 24, 0.90) 0%, rgba(8, 45, 53, 0.86) 50%, rgba(4, 20, 24, 0.92) 100%), url('/images/wash_hero_bg.jpg') center/cover no-repeat",
         color: T.white,
-        padding: isMobile ? "90px 20px 96px" : "150px 32px 160px",
+        padding: isMobile ? "36px 20px 40px" : "48px 32px 52px",
         overflow: "hidden",
         width: "100%",
-        minHeight: isMobile ? "auto" : 560,
+        minHeight: "auto",
         display: "flex",
         alignItems: "center",
       }}>
