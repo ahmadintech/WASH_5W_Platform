@@ -259,12 +259,12 @@ export default function AdminDashboard() {
             <button
               onClick={() => navigate("/admin/powerbi")}
               className="inline-flex items-center gap-2 rounded-xl border border-amber-300 dark:border-amber-700/70 bg-amber-50 dark:bg-amber-950/40 px-3.5 py-2 text-xs font-bold text-amber-800 dark:text-amber-200 shadow-xs hover:bg-amber-100 dark:hover:bg-amber-900/60 transition-all cursor-pointer"
-              title="Connect or export live 5W data to Microsoft Power BI"
+              title="View 2026 Power BI Response Dashboard"
             >
               <svg className="w-4 h-4 text-amber-600 dark:text-amber-400" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M14.5 2h-3c-.28 0-.5.22-.5.5v19c0 .28.22.5.5.5h3c.28 0 .5-.22.5-.5v-19c0-.28-.22-.5-.5-.5zm-6 7h-3c-.28 0-.5.22-.5.5v12c0 .28.22.5.5.5h3c.28 0 .5-.22.5-.5v-12c0-.28-.22-.5-.5-.5zm12-4h-3c-.28 0-.5.22-.5.5v16c0 .28.22.5.5.5h3c.28 0 .5-.22.5-.5v-16c0-.28-.22-.5-.5-.5z" />
               </svg>
-              <span>Power BI Connector</span>
+              <span>Power BI Dashboard</span>
             </button>
           )}
 
@@ -450,14 +450,14 @@ export default function AdminDashboard() {
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-sm font-bold text-gray-900 dark:text-white">
-                  Microsoft Power BI Intelligence Connector
+                  Microsoft Power BI Response Dashboard
                 </h3>
                 <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30">
-                  LIVE 5W ODATA
+                  2026 DASHBOARD
                 </span>
               </div>
               <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
-                Connect or export all {reports.length} verified 5W records to Power BI Desktop &amp; Service for multi-cluster dashboards.
+                Access and explore the interactive 2026 Response Dashboard for Borno, Adamawa, and Yobe states.
               </p>
             </div>
           </div>
@@ -465,23 +465,23 @@ export default function AdminDashboard() {
           <div className="flex flex-wrap items-center gap-2.5 shrink-0">
             <button
               type="button"
-              onClick={() => window.open("https://app.powerbi.com", "_blank", "noopener,noreferrer")}
+              onClick={() => navigate("/admin/powerbi")}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-gray-950 text-xs font-bold shadow-xs transition-all cursor-pointer"
             >
-              <span>Open Power BI</span>
+              <span>View Dashboard</span>
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
               </svg>
             </button>
 
             <button
               type="button"
-              onClick={() => navigate("/admin/powerbi")}
+              onClick={() => window.open("https://app.powerbi.com/reportEmbed?reportId=e4522123-d8b1-4bba-a849-194287c809c4&autoAuth=true&ctid=40222b96-2fb0-47eb-80e9-382b3683f741", "_blank", "noopener,noreferrer")}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 text-xs font-bold hover:bg-gray-50 dark:hover:bg-gray-700 transition-all cursor-pointer"
             >
-              <span>Connect &amp; Export</span>
+              <span>Open in Power BI</span>
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
               </svg>
             </button>
           </div>
